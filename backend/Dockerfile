@@ -12,7 +12,7 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /build/target/*-exec.jar app.jar
+COPY --from=builder /build/target/qa-universe-lab-backend-*-exec.jar app.jar
 COPY knowledge /app/knowledge
 EXPOSE 8080
 ENV KNOWLEDGE_PATH=/app/knowledge
