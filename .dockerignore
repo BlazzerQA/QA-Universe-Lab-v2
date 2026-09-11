@@ -1,0 +1,15 @@
+.git
+.github
+.idea
+**/.idea
+**/node_modules
+**/target
+**/dist
+**/*.db
+**/.DS_Store
+frontend
+tests
+docs
+elk
+README.md
+docker-compose.yml

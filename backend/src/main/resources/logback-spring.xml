@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="qa.universe" level="INFO"/>
+
+    <!-- По умолчанию только консоль — локальный запуск не зависит от ELK -->
+    <springProfile name="!elk">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- docker compose profile elk together with Spring profile elk -->
+    <springProfile name="elk">
+        <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+            <destination>${LOGSTASH_HOST:-localhost}:5044</destination>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <includeContext>true</includeContext>
+                <includeMdc>true</includeMdc>
+                <customFields>{"service":"qa-universe-lab"}</customFields>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOGSTASH"/>
+        </root>
+    </springProfile>
+
+</configuration>

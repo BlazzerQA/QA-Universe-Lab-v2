@@ -1,0 +1,13 @@
+.git
+.idea
+**/.idea
+**/node_modules
+**/target
+**/dist
+**/*.db
+**/.DS_Store
+*.db
+qa_lab.db
+frontend/node_modules
+backend/target
+tests/target

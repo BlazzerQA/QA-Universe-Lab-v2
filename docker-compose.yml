@@ -1,0 +1,80 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: qa-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod}
+      - KNOWLEDGE_PATH=/app/knowledge
+      - LOGSTASH_HOST=logstash
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health | grep '\"status\":\"UP\"' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - qa-network
+
+  frontend:
+    build: ./frontend
+    container_name: qa-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - qa-network
+
+  elasticsearch:
+    profiles: ["elk"]
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.4
+    container_name: elk-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    networks:
+      - qa-network
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+
+  logstash:
+    profiles: ["elk"]
+    image: docker.elastic.co/logstash/logstash:8.11.4
+    container_name: elk-logstash
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5044:5044"
+    networks:
+      - qa-network
+    volumes:
+      - ./elk/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+
+  kibana:
+    profiles: ["elk"]
+    image: docker.elastic.co/kibana/kibana:8.11.4
+    container_name: elk-kibana
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=["http://elasticsearch:9200"]
+      - xpack.security.enabled=false
+    ports:
+      - "5601:5601"
+    networks:
+      - qa-network
+
+networks:
+  qa-network:
+    driver: bridge
+
+volumes:
+  elasticsearch-data:
