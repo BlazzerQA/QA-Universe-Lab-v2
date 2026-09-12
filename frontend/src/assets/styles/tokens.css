@@ -1,0 +1,49 @@
+/* Design tokens: named values used by every screen.
+   Change a token here — UI updates everywhere. No neon green. */
+:root {
+  --bg: #0b1220;
+  --panel: #111827;
+  --card: #162033;
+  --card-hover: #1a2740;
+  --border: #243044;
+  --border-strong: #334155;
+
+  --text: #e8eef7;
+  --muted: #94a3b8;
+  --heading: #f1f5f9;
+
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-text: #ffffff;
+  --primary-muted: rgba(59, 130, 246, 0.16);
+
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --danger-text: #ffffff;
+  --danger-muted: rgba(239, 68, 68, 0.16);
+
+  --success: #34d399;
+  --success-muted: rgba(52, 211, 153, 0.14);
+
+  --warning: #fbbf24;
+
+  --input-bg: #0d1524;
+  --input-border: #2a3b55;
+  --focus-ring: rgba(59, 130, 246, 0.35);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  --header-h: 72px;
+
+  --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+  --syntax-key: #93c5fd;
+  --syntax-string: #ce9178;
+  --syntax-number: #b5cea8;
+  --syntax-boolean: #7dd3fc;
+  --syntax-muted: #64748b;
+}

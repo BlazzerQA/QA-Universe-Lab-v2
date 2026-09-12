@@ -1,13 +1,13 @@
 <template>
-  <div class="notes-page" data-testid="notes-page">
+  <div class="notes-page ui-page" data-testid="notes-page">
     <main class="page-layout">
-      <aside class="sidebar" data-testid="notes-sidebar">
+      <aside class="sidebar ui-panel" data-testid="notes-sidebar">
         <nav class="sidebar-nav" aria-label="Knowledge categories">
           <h2>Knowledge</h2>
           <div class="sidebar-content">
-            <p v-if="sidebarState === 'loading'" class="state-message loading-state">Loading notes...</p>
-            <p v-else-if="sidebarState === 'empty'" class="state-message empty-state">No notes available.</p>
-            <p v-else-if="sidebarState === 'error'" class="state-message error-state">
+            <p v-if="sidebarState === 'loading'" class="state-message ui-muted">Loading notes...</p>
+            <p v-else-if="sidebarState === 'empty'" class="state-message ui-muted">No notes available.</p>
+            <p v-else-if="sidebarState === 'error'" class="state-message ui-hint ui-hint--error">
               Failed to load notes.<br />Please try again later.
             </p>
             <section v-else v-for="(notes, category) in groupedNotes" :key="category" class="category-section">
@@ -31,16 +31,16 @@
       </aside>
 
       <section class="content-area" ref="contentArea" aria-label="Note content" data-testid="notes-content">
-        <article v-if="noteState === 'placeholder'" class="note-content note-placeholder">
-          <p>Выберите статью из меню</p>
+        <article v-if="noteState === 'placeholder'" class="note-content ui-card note-placeholder">
+          <p class="ui-muted">Выберите статью из меню</p>
         </article>
-        <article v-else-if="noteState === 'loading'" class="note-content">
-          <p class="note-state loading-state">Загрузка заметки...</p>
+        <article v-else-if="noteState === 'loading'" class="note-content ui-card">
+          <p class="note-state ui-muted">Загрузка заметки...</p>
         </article>
-        <article v-else-if="noteState === 'error'" class="note-content">
-          <p class="note-state error-state">{{ noteError }}</p>
+        <article v-else-if="noteState === 'error'" class="note-content ui-card">
+          <p class="note-state ui-hint ui-hint--error">{{ noteError }}</p>
         </article>
-        <article v-else class="note-content" data-testid="note-body">
+        <article v-else class="note-content ui-card" data-testid="note-body">
           <div class="note-body" v-html="noteHtml"></div>
         </article>
       </section>
@@ -139,24 +139,18 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.notes-page {
-  min-height: 100vh;
-  background-color: #121212;
-  color: #e0e0e0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  line-height: 1.6;
-}
-
 .page-layout {
   display: grid;
   grid-template-columns: 260px 1fr;
-  min-height: calc(100vh - 80px);
-  padding-top: 80px;
+  min-height: calc(100vh - var(--header-h));
+  padding-top: var(--header-h);
 }
 
 .sidebar {
-  background-color: #1a1a1a;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  border-top: none;
+  border-left: none;
+  border-bottom: none;
   padding: 1.5rem 1rem;
   overflow-y: auto;
 }
@@ -166,7 +160,7 @@ onMounted(() => {
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  color: #888;
+  color: var(--muted);
 }
 
 .sidebar-content {
@@ -187,8 +181,8 @@ onMounted(() => {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: #00ff41;
-  border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+  color: var(--primary);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 0.3rem;
 }
 
@@ -205,7 +199,7 @@ onMounted(() => {
   display: block;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
-  color: #e0e0e0;
+  color: var(--text);
   text-decoration: none;
   font-size: 0.95rem;
   transition: background-color 0.2s ease, color 0.2s ease;
@@ -213,13 +207,13 @@ onMounted(() => {
 
 .note-link:hover,
 .note-link:focus {
-  background-color: rgba(0, 255, 65, 0.1);
-  color: #00ff41;
+  background-color: var(--primary-muted);
+  color: var(--primary);
 }
 
 .note-link.active {
-  background-color: rgba(0, 255, 65, 0.2);
-  color: #00ff41;
+  background-color: var(--primary-muted);
+  color: var(--primary);
   font-weight: 600;
 }
 
@@ -231,30 +225,12 @@ onMounted(() => {
   border-radius: 8px;
 }
 
-.loading-state {
-  color: #888;
-}
-
-.empty-state {
-  color: #bbb;
-  background-color: rgba(255, 255, 255, 0.03);
-}
-
-.error-state {
-  color: #ff6b6b;
-  background-color: rgba(255, 107, 107, 0.08);
-}
-
 .content-area {
   padding: 2rem;
   overflow-y: auto;
 }
 
 .note-content {
-  background-color: #1a1a1a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 2rem;
   min-height: 100%;
 }
 
@@ -263,7 +239,6 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   min-height: 100%;
-  color: #888;
   font-size: 1.1rem;
   text-align: center;
 }
@@ -280,7 +255,7 @@ onMounted(() => {
 .note-body :deep(h4),
 .note-body :deep(h5),
 .note-body :deep(h6) {
-  color: #00ff41;
+  color: var(--heading);
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
 }
@@ -296,17 +271,17 @@ onMounted(() => {
 }
 
 .note-body :deep(code) {
-  background-color: rgba(255, 255, 255, 0.08);
-  color: #00ff41;
+  background-color: var(--primary-muted);
+  color: var(--syntax-key);
   padding: 0.15rem 0.35rem;
   border-radius: 4px;
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-family: var(--mono);
   font-size: 0.9em;
 }
 
 .note-body :deep(pre) {
-  background-color: #121212;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1rem;
   overflow-x: auto;
@@ -316,14 +291,14 @@ onMounted(() => {
 .note-body :deep(pre code) {
   background-color: transparent;
   padding: 0;
-  color: #e0e0e0;
+  color: var(--text);
 }
 
 .note-body :deep(blockquote) {
-  border-left: 3px solid #00ff41;
+  border-left: 3px solid var(--primary);
   margin: 0 0 1rem 0;
   padding-left: 1rem;
-  color: #bbb;
+  color: var(--muted);
 }
 
 .note-body :deep(table) {
@@ -334,14 +309,18 @@ onMounted(() => {
 
 .note-body :deep(th),
 .note-body :deep(td) {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   padding: 0.5rem 0.75rem;
   text-align: left;
 }
 
 .note-body :deep(th) {
-  background-color: rgba(0, 255, 65, 0.1);
-  color: #00ff41;
+  background-color: var(--primary-muted);
+  color: var(--heading);
+}
+
+.note-body :deep(a) {
+  color: var(--primary);
 }
 
 @media (max-width: 768px) {
@@ -351,7 +330,7 @@ onMounted(() => {
 
   .sidebar {
     border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--border);
   }
 
   .content-area {

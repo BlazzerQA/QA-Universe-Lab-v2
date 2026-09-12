@@ -1,10 +1,16 @@
 <template>
-  <div class="prep-page" data-testid="mocks-page">
-    <div class="container">
-      <router-link to="/main" class="back-link" data-testid="mocks-back">← На главную</router-link>
-      <h2 data-testid="mocks-title">Mockito: Изоляция и заглушки</h2>
+  <div class="prep-page ui-page" data-testid="mocks-page">
+    <div class="container ui-page-body">
+      <router-link to="/main" class="ui-link" data-testid="mocks-back">← На главную</router-link>
+      <h2 class="ui-title" data-testid="mocks-title">Mockito: Изоляция и заглушки</h2>
 
-      <div v-for="item in items" :key="item.id" class="card" :data-testid="'mocks-card-' + item.id">
+      <UiCard
+        v-for="item in items"
+        :key="item.id"
+        hover
+        class="qa-card"
+        :data-testid="'mocks-card-' + item.id"
+      >
         <div class="question" data-testid="mocks-question" @click="toggle(item.id)">
           {{ item.question }}
         </div>
@@ -12,8 +18,8 @@
           {{ item.answer }}
         </div>
         <div class="task-box" :id="item.taskId">{{ item.task }}</div>
-        <button class="copy-btn" data-testid="mocks-copy" @click="copyAndGo(item.task)">Копировать задачу</button>
-      </div>
+        <UiButton variant="primary" data-testid="mocks-copy" @click="copyAndGo(item.task)">Копировать задачу</UiButton>
+      </UiCard>
     </div>
   </div>
 </template>
@@ -82,71 +88,41 @@ async function copyAndGo(code) {
 </script>
 
 <style scoped>
-.prep-page {
-  background-color: #121212;
-  color: #e0e0e0;
-  font-family: sans-serif;
-  padding: 30px;
-  min-height: 100vh;
-  box-sizing: border-box;
-}
-
 .container {
   max-width: 900px;
-  margin: 90px auto 0;
 }
 
-.back-link {
-  color: #00ff41;
-  text-decoration: none;
+.ui-link {
   margin-bottom: 20px;
   display: inline-block;
 }
 
-.card {
-  background: #1e1e1e;
+.qa-card {
   margin-bottom: 20px;
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid #333;
 }
 
 .question {
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 700;
   font-size: 1.1em;
-  color: #00ff41;
+  color: var(--heading);
 }
 
 .answer {
   margin-top: 15px;
-  color: #e0e0e0;
-  border-left: 2px solid #00ff41;
+  color: var(--text);
+  border-left: 2px solid var(--primary);
   padding-left: 15px;
   font-style: italic;
 }
 
 .task-box {
-  background: #2a2a2a;
+  background: var(--input-bg);
   padding: 10px;
-  margin-top: 15px;
-  border-radius: 4px;
-  font-family: monospace;
-  color: #ffca28;
-}
-
-.copy-btn {
-  margin-top: 10px;
-  background: #00ff41;
-  color: #000;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-h2 {
-  color: #00ff41;
+  margin: 15px 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-family: var(--mono);
+  color: var(--warning);
 }
 </style>
