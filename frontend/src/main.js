@@ -9,11 +9,17 @@ import UiInput from './components/ui/UiInput.vue'
 import UiCard from './components/ui/UiCard.vue'
 import UiTabs from './components/ui/UiTabs.vue'
 import UiFloatingBg from './components/ui/UiFloatingBg.vue'
+import { useThemeStore } from './stores/theme'
+import { useLocaleStore } from './stores/locale'
 
 const app = createApp(App)
+const pinia = createPinia()
 
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
+
+useThemeStore().init()
+useLocaleStore().init()
 
 app.component('UiButton', UiButton)
 app.component('UiInput', UiInput)
