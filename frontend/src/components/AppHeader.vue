@@ -14,7 +14,7 @@
         </div>
         <span class="dropdown-arrow">▼</span>
       </button>
-      <div class="dropdown-content">
+      <div class="dropdown-content ui-card">
         <router-link to="/main" data-testid="nav-main">🏠 На главную</router-link>
         <router-link to="/profile" data-testid="nav-profile">👤 Мой профиль</router-link>
         <router-link to="/roadmap" data-testid="nav-roadmap">📋 Roadmap</router-link>
@@ -86,23 +86,23 @@ onUnmounted(() => {
   top: 0;
   left: 0;
   width: 100%;
-  background: rgba(18, 18, 18, 0.9);
-  backdrop-filter: blur(10px);
+  height: var(--header-h);
+  background: var(--panel);
+  backdrop-filter: blur(12px);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 50px;
+  padding: 12px 48px;
   z-index: 1000;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-  border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+  border-bottom: 1px solid var(--border);
   box-sizing: border-box;
 }
 
 .fixed-header h1 {
   margin: 0;
   font-size: 1.3rem;
-  color: #00ff41;
-  letter-spacing: 1px;
+  color: var(--heading);
+  letter-spacing: 0.4px;
 }
 
 .logo-link {
@@ -115,31 +115,29 @@ onUnmounted(() => {
 }
 
 .dropbtn {
-  background: rgba(30, 30, 40, 0.45);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 60px;
   padding: 8px 16px 8px 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease, background 0.2s ease;
   min-width: 140px;
   white-space: nowrap;
 }
 
 .dropbtn:hover {
-  background: rgba(30, 30, 40, 0.7);
-  border-color: #00ff41;
-  box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+  background: var(--card-hover);
+  border-color: var(--primary);
 }
 
 .avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00ff41, #0088cc);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,8 +155,8 @@ onUnmounted(() => {
 
 .avatar-name {
   font-size: 14px;
-  font-weight: bold;
-  color: #00ff41;
+  font-weight: 700;
+  color: var(--heading);
   display: block;
   max-width: 120px;
   overflow: hidden;
@@ -169,13 +167,13 @@ onUnmounted(() => {
 
 .avatar-label {
   font-size: 11px;
-  color: #aaa;
+  color: var(--muted);
   display: block;
 }
 
 .dropdown-arrow {
   font-size: 12px;
-  color: #aaa;
+  color: var(--muted);
   transition: transform 0.2s;
 }
 
@@ -186,13 +184,10 @@ onUnmounted(() => {
 .dropdown-content {
   position: absolute;
   right: 0;
-  background-color: #1e1e1e;
   min-width: 200px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
   z-index: 1;
-  border-radius: 12px;
-  border: 1px solid #333;
   margin-top: 12px;
+  padding: 8px;
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px);
@@ -206,7 +201,7 @@ onUnmounted(() => {
 }
 
 .dropdown-content a {
-  color: #e0e0e0;
+  color: var(--text);
   padding: 12px 18px;
   text-decoration: none;
   display: flex;
@@ -214,12 +209,12 @@ onUnmounted(() => {
   gap: 10px;
   transition: 0.2s;
   border-radius: 8px;
-  margin: 4px 8px;
+  margin: 0;
 }
 
 .dropdown-content a:hover {
-  background-color: #2a2a2a;
-  color: #00ff41;
+  background: var(--primary-muted);
+  color: var(--primary);
 }
 
 @media (max-width: 768px) {

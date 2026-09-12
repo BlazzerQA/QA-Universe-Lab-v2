@@ -17,6 +17,6 @@ const isLoginPage = computed(() => route.path === '/login')
 <style>
 #app-root {
   min-height: 100vh;
-  background-color: #121212;
+  background: var(--bg);
 }
 </style>

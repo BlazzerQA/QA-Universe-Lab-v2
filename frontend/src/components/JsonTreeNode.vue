@@ -30,7 +30,7 @@
         </span>
         <span v-else class="toggle-icon">  </span>
         <span class="bracket">{{ isArray ? '[' : '{' }}</span>
-        <span v-if="hasChildren && !expanded" style="color: #888;"> … </span>
+        <span v-if="hasChildren && !expanded" class="ellipsis"> … </span>
         <span class="bracket">{{ isArray ? ']' : '}' }}</span>
       </template>
     </div>
@@ -118,7 +118,7 @@ function copyValue(text) {
 }
 
 .node-content:hover {
-  background-color: #2a2a2a;
+  background-color: var(--card-hover);
 }
 
 .toggle-icon {
@@ -133,32 +133,33 @@ function copyValue(text) {
 }
 
 .array-index {
-  color: #888;
+  color: var(--syntax-muted);
   min-width: 30px;
   flex-shrink: 0;
 }
 
 .key-name {
-  color: #00ff41;
+  color: var(--syntax-key);
   font-weight: bold;
   margin-right: 6px;
   flex-shrink: 0;
 }
 
-.value-string { color: #ce9178; }
-.value-number { color: #b5cea8; }
-.value-boolean { color: #569cd6; }
-.value-null { color: #569cd6; font-style: italic; }
-.bracket {
-  color: #888;
+.value-string { color: var(--syntax-string); }
+.value-number { color: var(--syntax-number); }
+.value-boolean { color: var(--syntax-boolean); }
+.value-null { color: var(--syntax-boolean); font-style: italic; }
+.bracket,
+.ellipsis {
+  color: var(--syntax-muted);
   margin: 0 2px;
 }
 
 .copy-btn {
   opacity: 0;
-  background: #3a3a3a;
-  border: none;
-  color: #ccc;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--muted);
   border-radius: 3px;
   cursor: pointer;
   font-size: 11px;
@@ -173,12 +174,13 @@ function copyValue(text) {
 }
 
 .copy-btn:hover {
-  background: #00ff41;
-  color: #121212;
+  background: var(--primary);
+  color: var(--primary-text);
+  border-color: var(--primary);
 }
 
 .children-container {
   margin-left: 24px;
-  border-left: 1px dashed #444;
+  border-left: 1px dashed var(--border);
 }
 </style>

@@ -1,107 +1,86 @@
 <template>
-  <div class="login-page">
+  <div class="login-page ui-page">
     <canvas id="codeCanvas" ref="codeCanvas"></canvas>
 
-    <div class="login-card" data-testid="login-card">
-      <div class="tabs">
-        <button
-          id="loginTabBtn"
-          class="tab-btn"
-          :class="{ active: activeTab === 'login' }"
-          data-testid="tab-login"
-          @click="activeTab = 'login'"
-        >
-          Вход
-        </button>
-        <button
-          id="registerTabBtn"
-          class="tab-btn"
-          :class="{ active: activeTab === 'register' }"
-          data-testid="tab-register"
-          @click="activeTab = 'register'"
-        >
-          Регистрация
-        </button>
-      </div>
+    <UiCard class="login-card" data-testid="login-card">
+      <UiTabs v-model="activeTab" :tabs="tabs" />
 
-      <!-- ФОРМА ВХОДА -->
-      <div v-show="activeTab === 'login'" class="form-container" data-testid="login-form">
+      <div v-show="activeTab === 'login'" data-testid="login-form">
         <form @submit.prevent="handleLogin">
-          <div class="form-group">
-            <label>Телефон:</label>
-            <input
-              v-model="loginForm.phone"
-              name="phone"
-              type="text"
-              placeholder="+79991234567"
-              data-testid="login-phone"
-            />
-            <p v-if="loginErrors.phone" class="error-text" data-testid="login-phone-error">{{ loginErrors.phone }}</p>
-          </div>
-          <div class="form-group">
-            <label>Пароль:</label>
-            <input
-              v-model="loginForm.password"
-              name="password"
-              type="password"
-              data-testid="login-password"
-            />
-            <p v-if="loginErrors.global" class="error-text" data-testid="login-error">{{ loginErrors.global }}</p>
-          </div>
-          <button type="submit" data-testid="login-submit" :disabled="loading">ВОЙТИ</button>
+          <UiInput
+            v-model="loginForm.phone"
+            label="Телефон:"
+            name="phone"
+            placeholder="+79991234567"
+            data-testid="login-phone"
+            :error="loginErrors.phone"
+            error-testid="login-phone-error"
+          />
+          <UiInput
+            v-model="loginForm.password"
+            label="Пароль:"
+            name="password"
+            type="password"
+            data-testid="login-password"
+          />
+          <p v-if="loginErrors.global" class="ui-hint ui-hint--error" data-testid="login-error">
+            {{ loginErrors.global }}
+          </p>
+          <UiButton type="submit" variant="primary" block data-testid="login-submit" :disabled="loading">
+            ВОЙТИ
+          </UiButton>
         </form>
       </div>
 
-      <!-- ФОРМА РЕГИСТРАЦИИ -->
-      <div v-show="activeTab === 'register'" class="form-container" data-testid="register-form">
-        <div class="form-group">
-          <label>Телефон:</label>
-          <input
-            id="regPhone"
-            v-model="registerForm.phone"
-            type="text"
-            placeholder="+79991234567"
-            data-testid="register-phone"
-          />
-          <p v-if="registerErrors.phone" id="regPhoneError" class="error-text" data-testid="register-phone-error">
-            {{ registerErrors.phone }}
-          </p>
-        </div>
-        <div class="form-group">
-          <label>Пароль (мин. 6 символов):</label>
-          <input
-            id="regPassword"
-            v-model="registerForm.password"
-            type="password"
-            data-testid="register-password"
-          />
-          <p v-if="registerErrors.password" id="regPasswordError" class="error-text" data-testid="register-password-error">
-            {{ registerErrors.password }}
-          </p>
-        </div>
-        <div class="form-group">
-          <label>Повторите пароль:</label>
-          <input
-            id="regConfirmPassword"
-            v-model="registerForm.confirmPassword"
-            type="password"
-            data-testid="register-confirm"
-          />
-          <p v-if="registerErrors.confirm" id="regConfirmError" class="error-text" data-testid="register-confirm-error">
-            {{ registerErrors.confirm }}
-          </p>
-        </div>
-        <button id="registerBtn" data-testid="register-submit" @click="handleRegister" :disabled="loading">
+      <div v-show="activeTab === 'register'" data-testid="register-form">
+        <UiInput
+          v-model="registerForm.phone"
+          input-id="regPhone"
+          label="Телефон:"
+          placeholder="+79991234567"
+          data-testid="register-phone"
+          :error="registerErrors.phone"
+          error-id="regPhoneError"
+          error-testid="register-phone-error"
+        />
+        <UiInput
+          v-model="registerForm.password"
+          input-id="regPassword"
+          label="Пароль (мин. 6 символов):"
+          type="password"
+          data-testid="register-password"
+          :error="registerErrors.password"
+          error-id="regPasswordError"
+          error-testid="register-password-error"
+        />
+        <UiInput
+          v-model="registerForm.confirmPassword"
+          input-id="regConfirmPassword"
+          label="Повторите пароль:"
+          type="password"
+          data-testid="register-confirm"
+          :error="registerErrors.confirm"
+          error-id="regConfirmError"
+          error-testid="register-confirm-error"
+        />
+        <UiButton
+          id="registerBtn"
+          variant="primary"
+          block
+          data-testid="register-submit"
+          :disabled="loading"
+          @click="handleRegister"
+        >
           ЗАРЕГИСТРИРОВАТЬСЯ
-        </button>
-        <p v-if="registerMessage" id="registerMessage" class="success-text" data-testid="register-success">
+        </UiButton>
+        <p v-if="registerMessage" id="registerMessage" class="ui-hint ui-hint--success" data-testid="register-success">
           {{ registerMessage }}
         </p>
-        <p v-if="registerErrors.global" id="registerError" class="error-text" data-testid="register-error">
+        <p v-if="registerErrors.global" id="registerError" class="ui-hint ui-hint--error" data-testid="register-error">
           {{ registerErrors.global }}
         </p>
       </div>
-    </div>
+    </UiCard>
   </div>
 </template>
 
@@ -112,6 +91,11 @@ import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+const tabs = [
+  { id: 'login', label: 'Вход', testid: 'tab-login', buttonId: 'loginTabBtn' },
+  { id: 'register', label: 'Регистрация', testid: 'tab-register', buttonId: 'registerTabBtn' }
+]
 
 const activeTab = ref('login')
 const loading = ref(false)
@@ -201,7 +185,6 @@ async function handleRegister() {
   }
 }
 
-// Matrix background animation
 function initMatrixBg() {
   const canvas = codeCanvas.value
   if (!canvas) return
@@ -216,6 +199,10 @@ function initMatrixBg() {
   const fontSize = 20
   let drops = []
 
+  function token(name, fallback) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+  }
+
   function resize() {
     width = window.innerWidth
     height = window.innerHeight
@@ -229,9 +216,9 @@ function initMatrixBg() {
   }
 
   function draw() {
-    ctx.fillStyle = 'rgba(18, 18, 18, 0.1)'
+    ctx.fillStyle = 'rgba(11, 18, 32, 0.14)'
     ctx.fillRect(0, 0, width, height)
-    ctx.fillStyle = '#33ff55'
+    ctx.fillStyle = token('--primary', '#3b82f6')
     ctx.font = fontSize + 'px monospace'
     for (let i = 0; i < drops.length; i++) {
       const word = words[Math.floor(Math.random() * words.length)]
@@ -266,14 +253,10 @@ onUnmounted(() => {
 
 <style scoped>
 .login-page {
-  background-color: #121212;
-  color: #e0e0e0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  margin: 0;
 }
 
 #codeCanvas {
@@ -287,134 +270,11 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-.tabs {
-  display: flex;
-  gap: 30px;
-  margin-bottom: 30px;
-  justify-content: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.tab-btn {
-  background: none;
-  border: none;
-  color: #aaa;
-  font-size: 1rem;
-  font-weight: 500;
-  padding: 10px 0;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  width: auto;
-}
-
-.tab-btn.active {
-  color: #00ff41;
-}
-
-.tab-btn.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: #00ff41;
-  border-radius: 2px;
-  box-shadow: 0 0 6px rgba(0, 255, 65, 0.6);
-}
-
-.tab-btn:hover:not(.active)::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: rgba(0, 255, 65, 0.4);
-  border-radius: 2px;
-}
-
-.tab-btn:hover:not(.active) {
-  color: #ddd;
-}
-
-.form-container {
-  transition: all 0.3s ease;
-}
-
 .login-card {
   position: relative;
   z-index: 1;
-  background: rgba(20, 20, 30, 0.35);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  width: 340px;
   padding: 2rem;
-  border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1);
-  width: 300px;
-  border: none;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  color: #bbb;
-}
-
-input {
-  width: 100%;
-  padding: 10px;
-  background: #2c2c2c;
-  border: 1px solid #444;
-  border-radius: 4px;
-  color: #fff;
-  box-sizing: border-box;
-}
-
-input:focus {
-  border-color: #00ff41;
-  outline: none;
-}
-
-button[type='submit'],
-#registerBtn {
-  width: 100%;
-  padding: 10px;
-  background-color: #00ff41;
-  border: none;
-  border-radius: 4px;
-  color: #000;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-button[type='submit']:hover,
-#registerBtn:hover {
-  background-color: #00cc33;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.error-text {
-  color: #ff4c4c;
-  font-size: 0.8rem;
-  margin-top: 5px;
-}
-
-.success-text {
-  color: #00ff41;
-  font-size: 0.9rem;
-  margin-top: 15px;
-  text-align: center;
+  backdrop-filter: blur(16px);
 }
 </style>
