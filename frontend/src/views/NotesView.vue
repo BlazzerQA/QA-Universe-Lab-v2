@@ -143,7 +143,6 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 260px 1fr;
   min-height: calc(100vh - var(--header-h));
-  padding-top: var(--header-h);
 }
 
 .sidebar {

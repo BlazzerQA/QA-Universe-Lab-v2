@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>QA Universe Lab</title>
+    <script>
+      try {
+        var theme = localStorage.getItem('qa-lab-theme')
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', theme)
+        }
+        var locale = localStorage.getItem('qa-lab-locale')
+        if (locale === 'ru' || locale === 'en') {
+          document.documentElement.lang = locale
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="app"></div>
