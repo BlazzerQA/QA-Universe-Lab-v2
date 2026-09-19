@@ -235,11 +235,15 @@ function noteSubtitle(note) {
 
 .note-list {
   list-style: none;
-  margin: 0;
-  padding: 0.15rem 0 0.35rem;
+  margin: 0.15rem 0 0.45rem;
+  padding: 0.1rem 0 0.1rem 0.2rem;
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 0;
+}
+
+.note-list li + li .note-link {
+  border-top: 1px solid var(--border);
 }
 
 .note-link-title {
@@ -252,26 +256,29 @@ function noteSubtitle(note) {
 .note-link {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.38rem 0.6rem;
-  border-radius: var(--radius-sm);
+  gap: 0.12rem;
+  padding: 0.55rem 0.6rem 0.55rem 0.7rem;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   color: var(--text);
   text-decoration: none;
-  font-size: 0.9rem;
-  line-height: 1.3;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .note-link:hover,
 .note-link:focus {
   background-color: var(--primary-muted);
   color: var(--primary);
+  border-left-color: var(--primary);
 }
 
 .note-link.active {
   background-color: var(--primary-muted);
   color: var(--primary);
   font-weight: 600;
+  border-left-color: var(--primary);
 }
 
 .note-link-subtitle {
