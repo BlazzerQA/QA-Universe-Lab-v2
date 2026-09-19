@@ -7,17 +7,21 @@
       <div class="editor-area" :class="{ 'left-collapsed': isInputCollapsed }">
         <UiCard class="input-panel" :class="{ collapsed: isInputCollapsed }">
           <h3>✏️ Введите сырой JSON</h3>
-          <textarea
+          <MonacoEditor
+            ref="jsonEditor"
             v-model="jsonInput"
-            class="ui-textarea"
-            placeholder='Например: { "name": "QA", "tools": ["Postman", "RestAssured"] }'
-            data-testid="json-input"
-          ></textarea>
+            language="json"
+            height="400px"
+            test-id="json-input"
+            aria-label="JSON input editor"
+            @run="formatJson"
+          />
           <div class="button-group">
             <UiButton variant="primary" data-testid="json-format" @click="formatJson">🎨 Отформатировать</UiButton>
             <UiButton variant="danger" data-testid="json-clear" @click="clearJson">🗑 Очистить</UiButton>
             <UiButton variant="primary" data-testid="json-example" @click="loadExample">📋 Пример</UiButton>
           </div>
+          <p class="shortcut-hint ui-muted">Ctrl+Enter / ⌘Enter — отформатировать</p>
           <div v-if="errorMsg" class="ui-hint ui-hint--error" data-testid="json-error">{{ errorMsg }}</div>
         </UiCard>
         <UiCard class="output-panel">
@@ -44,13 +48,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import JsonTreeNode from '@/components/JsonTreeNode.vue'
+import MonacoEditor from '@/components/MonacoEditor.vue'
 
 const jsonInput = ref('')
 const parsedJson = ref(null)
 const errorMsg = ref('')
 const isInputCollapsed = ref(false)
+const jsonEditor = ref(null)
 
 function formatJson() {
   errorMsg.value = ''
@@ -86,6 +92,9 @@ function loadExample() {
 
 function toggleInputPanel() {
   isInputCollapsed.value = !isInputCollapsed.value
+  if (!isInputCollapsed.value) {
+    nextTick(() => jsonEditor.value?.layout())
+  }
 }
 </script>
 
@@ -121,16 +130,16 @@ function toggleInputPanel() {
   max-height: 70vh;
 }
 
-.ui-textarea {
-  height: 400px;
-  font-size: 14px;
-}
-
 .button-group {
   margin-top: 15px;
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.shortcut-hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
 }
 
 .json-viewer {
