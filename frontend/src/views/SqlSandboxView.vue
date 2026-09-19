@@ -10,13 +10,7 @@
       <div class="sandbox-grid">
         <UiCard class="editor-card">
           <h3>Запрос</h3>
-          <textarea
-            v-model="sql"
-            class="ui-textarea sql-editor"
-            spellcheck="false"
-            data-testid="sql-editor"
-            placeholder="SELECT * FROM products;"
-          />
+          <SqlMonacoEditor v-model="sql" :disabled="loading" @run="runQuery" />
           <div class="button-row">
             <UiButton variant="primary" data-testid="sql-run" :disabled="loading" @click="runQuery">
               Выполнить
@@ -28,6 +22,7 @@
               Очистить
             </UiButton>
           </div>
+          <p class="shortcut-hint ui-muted">Ctrl+Enter / ⌘Enter — выполнить</p>
           <p v-if="error" class="ui-hint ui-hint--error" data-testid="sql-error">{{ error }}</p>
         </UiCard>
 
@@ -67,6 +62,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import api from '@/api/client'
+import SqlMonacoEditor from '@/components/SqlMonacoEditor.vue'
 import { useShellI18n } from '@/composables/useShellI18n'
 
 const { t } = useShellI18n()
@@ -145,15 +141,15 @@ function formatCell(value) {
   color: var(--heading);
 }
 
-.sql-editor {
-  min-height: 180px;
-  margin-bottom: 0.85rem;
-}
-
 .button-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.shortcut-hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
 }
 
 .schema-table {
