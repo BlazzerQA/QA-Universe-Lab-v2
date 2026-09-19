@@ -1,34 +1,39 @@
 <template>
   <div class="notes-page ui-page" data-testid="notes-page">
     <main class="page-layout">
-      <aside class="sidebar ui-panel" data-testid="notes-sidebar">
-        <nav class="sidebar-nav" aria-label="Knowledge categories">
-          <h2>Knowledge</h2>
-          <div class="sidebar-content">
-            <p v-if="sidebarState === 'loading'" class="state-message ui-muted">Loading notes...</p>
-            <p v-else-if="sidebarState === 'empty'" class="state-message ui-muted">No notes available.</p>
-            <p v-else-if="sidebarState === 'error'" class="state-message ui-hint ui-hint--error">
-              Failed to load notes.<br />Please try again later.
-            </p>
-            <section v-else v-for="(notes, category) in groupedNotes" :key="category" class="category-section">
-              <h3 class="category-title">{{ category.toUpperCase() }}</h3>
-              <ul class="note-list">
-                <li v-for="note in notes" :key="note.path">
-                  <a
-                    href="#"
-                    class="note-link"
-                    :class="{ active: activePath === note.path }"
-                    :data-testid="'note-link-' + note.path"
-                    @click.prevent="selectNote(note)"
-                  >
-                    {{ note.title }}
-                  </a>
-                </li>
-              </ul>
-            </section>
-          </div>
-        </nav>
-      </aside>
+      <div class="mobile-toolbar" data-testid="notes-mobile-toolbar">
+        <button
+          type="button"
+          class="ui-btn ui-btn--ghost browse-btn"
+          data-testid="notes-browse"
+          :aria-expanded="notesNavOpen"
+          aria-controls="notes-sidebar-panel"
+          @click="notesNavOpen = !notesNavOpen"
+        >
+          {{ notesNavOpen ? 'Close notes' : 'Browse notes' }}
+        </button>
+        <p class="current-note ui-muted">{{ currentNoteLabel }}</p>
+      </div>
+
+      <div
+        id="notes-sidebar-panel"
+        class="sidebar-shell"
+        :class="{ 'is-open': notesNavOpen }"
+      >
+        <NotesSidebar
+          :sidebar-state="sidebarState"
+          :search-query="searchQuery"
+          :groups="visibleGroups"
+          :expanded-categories="expandedCategories"
+          :active-path="activePath"
+          :total-count="allNotes.length"
+          :visible-count="visibleCount"
+          :is-searching="isSearching"
+          @update:search-query="searchQuery = $event"
+          @toggle-category="toggleCategory"
+          @select-note="selectNote"
+        />
+      </div>
 
       <section class="content-area" ref="contentArea" aria-label="Note content" data-testid="notes-content">
         <article v-if="noteState === 'placeholder'" class="note-content ui-card note-placeholder">
@@ -44,21 +49,69 @@
           <div class="note-body" v-html="noteHtml"></div>
         </article>
       </section>
+
+      <button
+        v-if="notesNavOpen"
+        type="button"
+        class="notes-overlay"
+        aria-label="Close notes"
+        data-testid="notes-sidebar-overlay"
+        @click="notesNavOpen = false"
+      />
     </main>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import api from '@/api/client'
+import NotesSidebar from '@/components/NotesSidebar.vue'
 
-const groupedNotes = ref({})
+const route = useRoute()
+const router = useRouter()
+
+const allNotes = ref([])
 const sidebarState = ref('loading')
 const noteState = ref('placeholder')
 const noteHtml = ref('')
 const noteError = ref('')
 const activePath = ref('')
 const contentArea = ref(null)
+const searchQuery = ref('')
+const expandedCategories = ref({})
+const notesNavOpen = ref(false)
+
+const isSearching = computed(() => searchQuery.value.trim().length > 0)
+
+const groupedNotes = computed(() => groupByCategory(allNotes.value))
+
+const visibleGroups = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+  return groupedNotes.value
+    .map((group) => {
+      const notes = query ? group.notes.filter((note) => matchesQuery(note, query)) : group.notes
+      if (!notes.length) return null
+      return { category: group.category, notes }
+    })
+    .filter(Boolean)
+})
+
+const visibleCount = computed(() =>
+  visibleGroups.value.reduce((sum, group) => sum + group.notes.length, 0)
+)
+
+const currentNoteLabel = computed(() => {
+  if (!activePath.value) return 'Knowledge'
+  const current = allNotes.value.find((note) => note.path === activePath.value)
+  return current?.title || 'Knowledge'
+})
+
+function matchesQuery(note, query) {
+  return [note.title, note.category, note.path]
+    .filter(Boolean)
+    .some((value) => value.toLowerCase().includes(query))
+}
 
 function groupByCategory(notes) {
   const grouped = notes.reduce((acc, note) => {
@@ -72,10 +125,22 @@ function groupByCategory(notes) {
 
   return Object.keys(grouped)
     .sort((a, b) => a.localeCompare(b))
-    .reduce((acc, category) => {
-      acc[category] = grouped[category].sort((a, b) => a.title.localeCompare(b.title))
-      return acc
-    }, {})
+    .map((category) => ({
+      category,
+      notes: grouped[category].sort((a, b) => a.title.localeCompare(b.title))
+    }))
+}
+
+function expandCategory(category) {
+  if (!category || expandedCategories.value[category]) return
+  expandedCategories.value = { ...expandedCategories.value, [category]: true }
+}
+
+function toggleCategory(category) {
+  expandedCategories.value = {
+    ...expandedCategories.value,
+    [category]: !expandedCategories.value[category]
+  }
 }
 
 function buildNoteApiPath(path) {
@@ -102,18 +167,46 @@ async function loadNotes() {
     const response = await api.get('/api/notes')
     const notes = response.data
     if (!Array.isArray(notes) || notes.length === 0) {
+      allNotes.value = []
       sidebarState.value = 'empty'
       return
     }
-    groupedNotes.value = groupByCategory(notes)
+    allNotes.value = notes
     sidebarState.value = 'ready'
+    await applyPathFromQuery(route.query.path)
   } catch (error) {
     console.error('Failed to load notes:', error)
     sidebarState.value = 'error'
   }
 }
 
-async function selectNote(note) {
+function resetNoteView() {
+  activePath.value = ''
+  noteHtml.value = ''
+  noteError.value = ''
+  noteState.value = 'placeholder'
+}
+
+async function applyPathFromQuery(path) {
+  if (!path) {
+    if (activePath.value) resetNoteView()
+    return
+  }
+  if (path === activePath.value && (noteState.value === 'ready' || noteState.value === 'loading')) {
+    return
+  }
+  const note = allNotes.value.find((item) => item.path === path)
+  if (!note) {
+    noteError.value = 'Note not found.'
+    noteState.value = 'error'
+    activePath.value = path
+    return
+  }
+  expandCategory(note.category || 'Uncategorized')
+  await loadNoteContent(note)
+}
+
+async function loadNoteContent(note) {
   activePath.value = note.path
   noteState.value = 'loading'
   try {
@@ -133,100 +226,67 @@ async function selectNote(note) {
   }
 }
 
+async function selectNote(note) {
+  notesNavOpen.value = false
+  expandCategory(note.category || 'Uncategorized')
+  await loadNoteContent(note)
+  if (route.query.path !== note.path) {
+    await router.replace({ query: { ...route.query, path: note.path } })
+  }
+}
+
+function onResize() {
+  if (window.innerWidth > 768) notesNavOpen.value = false
+}
+
+watch(
+  () => route.query.path,
+  (path) => {
+    if (sidebarState.value !== 'ready') return
+    applyPathFromQuery(path)
+  }
+)
+
 onMounted(() => {
   loadNotes()
+  window.addEventListener('resize', onResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', onResize)
 })
 </script>
 
 <style scoped>
+.notes-page {
+  min-height: calc(100vh - var(--header-h));
+  --notes-toolbar-h: 60px;
+}
+
 .page-layout {
   display: grid;
-  grid-template-columns: 260px 1fr;
-  min-height: calc(100vh - var(--header-h));
+  grid-template-columns: 280px 1fr;
+  height: calc(100vh - var(--header-h));
+  min-height: 0;
 }
 
-.sidebar {
-  border-radius: 0;
-  border-top: none;
-  border-left: none;
-  border-bottom: none;
-  padding: 1.5rem 1rem;
-  overflow-y: auto;
+.mobile-toolbar {
+  display: none;
 }
 
-.sidebar-nav h2 {
-  margin: 0 0 1rem 0;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--muted);
+.sidebar-shell {
+  min-height: 0;
+  min-width: 0;
 }
 
-.sidebar-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.category-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.category-title {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--primary);
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.3rem;
-}
-
-.note-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.note-link {
-  display: block;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  color: var(--text);
-  text-decoration: none;
-  font-size: 0.95rem;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.note-link:hover,
-.note-link:focus {
-  background-color: var(--primary-muted);
-  color: var(--primary);
-}
-
-.note-link.active {
-  background-color: var(--primary-muted);
-  color: var(--primary);
-  font-weight: 600;
-}
-
-.state-message {
-  margin: 0;
-  padding: 1rem 0.5rem;
-  text-align: center;
-  font-size: 0.95rem;
-  border-radius: 8px;
+.sidebar-shell :deep(.notes-sidebar) {
+  height: 100%;
 }
 
 .content-area {
   padding: 2rem;
   overflow-y: auto;
+  min-width: 0;
 }
 
 .note-content {
@@ -246,6 +306,10 @@ onMounted(() => {
   margin: 0;
   text-align: center;
   font-size: 1.1rem;
+}
+
+.notes-overlay {
+  display: none;
 }
 
 .note-body :deep(h1),
@@ -281,10 +345,10 @@ onMounted(() => {
 .note-body :deep(pre) {
   background-color: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 8px;
   padding: 1rem;
   overflow-x: auto;
   margin: 0 0 1rem 0;
+  border-radius: 8px;
 }
 
 .note-body :deep(pre code) {
@@ -324,16 +388,78 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .page-layout {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--header-h));
   }
 
-  .sidebar {
-    border-right: none;
+  .mobile-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 37;
+  }
+
+  .browse-btn {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .current-note {
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9rem;
+  }
+
+  .sidebar-shell {
+    position: fixed;
+    top: calc(var(--header-h) + var(--notes-toolbar-h));
+    left: 0;
+    bottom: 0;
+    width: min(320px, 88vw);
+    z-index: 36;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: none;
+  }
+
+  .sidebar-shell.is-open {
+    transform: translateX(0);
+    box-shadow: var(--shadow);
+  }
+
+  .sidebar-shell :deep(.notes-sidebar) {
+    height: 100%;
+    border-right: 1px solid var(--border);
   }
 
   .content-area {
     padding: 1.5rem;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .notes-overlay {
+    display: block;
+    position: fixed;
+    top: calc(var(--header-h) + var(--notes-toolbar-h));
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 35;
+    cursor: pointer;
   }
 }
 </style>
