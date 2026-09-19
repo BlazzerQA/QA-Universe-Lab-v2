@@ -43,6 +43,13 @@
             @click="$emit('toggle-category', group.category)"
           >
             <span class="category-chevron" aria-hidden="true">{{ isExpanded(group.category) ? '▾' : '▸' }}</span>
+            <img
+              v-if="categoryLogo(group.category)"
+              :src="categoryLogo(group.category)"
+              alt=""
+              class="category-logo"
+              aria-hidden="true"
+            />
             <span class="category-title">{{ group.category.toUpperCase() }}</span>
             <span class="category-count">{{ group.notes.length }}</span>
           </button>
@@ -68,6 +75,7 @@
 
 <script setup>
 import UiInput from '@/components/ui/UiInput.vue'
+import { categoryLogo } from '@/config/noteCategories'
 
 const props = defineProps({
   sidebarState: { type: String, required: true },
@@ -200,6 +208,14 @@ function noteSubtitle(note) {
   flex-shrink: 0;
   font-size: 0.75rem;
   color: var(--muted);
+}
+
+.category-logo {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 3px;
 }
 
 .category-title {
