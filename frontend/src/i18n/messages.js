@@ -18,7 +18,7 @@ export const MESSAGES = {
     'header.logout': 'Выйти',
     'user.fallback': 'Пользователь',
     'sql.title': 'SQL Sandbox',
-    'sql.stub': 'Тренажёр SQL появится в этом разделе. Пока здесь заглушка, чтобы пункт меню вёл на своё место.'
+    'sql.stub': 'Пишите SELECT по таблице products. Товары из магазина появляются в этой базе.'
   },
   en: {
     'nav.main': 'Home',
@@ -38,7 +38,7 @@ export const MESSAGES = {
     'header.logout': 'Log out',
     'user.fallback': 'User',
     'sql.title': 'SQL Sandbox',
-    'sql.stub': 'The SQL trainer will live here. This placeholder keeps the menu item wired to its own page.'
+    'sql.stub': 'Write SELECT queries against the products table. Shop items show up in this database.'
   }
 }
 

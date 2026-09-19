@@ -1,14 +1,16 @@
 package qa.universe.controllers.api;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import qa.universe.models.Product;
+import qa.universe.repositories.ProductRepository;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -16,13 +18,14 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/products")
 @CrossOrigin(origins = "http://localhost:5173")
+@RequiredArgsConstructor
 public class ProductsRestController {
 
-    private final Map<String, Product> products = new LinkedHashMap<>();
+    private final ProductRepository productRepository;
 
     @GetMapping
     public Collection<Product> getProducts() {
-        return products.values();
+        return productRepository.findAll(Sort.by("productName"));
     }
 
     @PostMapping
@@ -35,7 +38,7 @@ public class ProductsRestController {
         if (product.getProductId() == null || product.getProductId().isBlank()) {
             product.setProductId(UUID.randomUUID().toString());
         }
-        products.put(product.getProductId(), product);
+        productRepository.save(product);
         return ResponseEntity.ok(Map.of(
                 "product", product.getProductName(),
                 "price", product.getPrice(),
@@ -45,11 +48,10 @@ public class ProductsRestController {
 
     @DeleteMapping("/{productId}")
     public ResponseEntity<?> deleteProduct(@PathVariable String productId) {
-        Product removedProduct = products.remove(productId);
-
-        if (removedProduct == null) {
+        if (!productRepository.existsById(productId)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Product not found"));
         }
+        productRepository.deleteById(productId);
         return ResponseEntity.ok("Product deleted successfully");
     }
 }
