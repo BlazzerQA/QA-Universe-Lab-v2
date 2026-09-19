@@ -29,4 +29,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));
     }
+
+    @ExceptionHandler(SqlSandboxException.class)
+    public ResponseEntity<?> handleSqlSandbox(SqlSandboxException e) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("status", HttpStatus.BAD_REQUEST.value(), "message", e.getMessage()));
+    }
 }
