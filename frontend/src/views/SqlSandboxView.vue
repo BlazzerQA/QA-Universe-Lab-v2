@@ -3,8 +3,9 @@
     <div class="ui-page-body">
       <h1 class="ui-title">{{ t('sql.title') }}</h1>
       <p class="ui-muted intro">
-        Пишите SELECT по таблице магазина <code>products</code>. Товары, которые вы добавляете в магазине,
-        появляются здесь.
+        SELECT по <code>products</code> — как в магазине. Для JOIN две учебные таблицы:
+        <code>customers</code> и <code>orders</code>. В данных специально есть клиенты без заказов
+        и заказы без клиента — на них получаются все виды JOIN.
       </p>
 
       <div class="sandbox-grid">
@@ -28,10 +29,12 @@
 
         <UiCard class="schema-card">
           <h3>Схема</h3>
-          <p class="schema-table">{{ schema.table }}</p>
-          <ul class="schema-columns">
-            <li v-for="column in schema.columns" :key="column"><code>{{ column }}</code></li>
-          </ul>
+          <div v-for="item in schemaTables" :key="item.table" class="schema-block" data-testid="sql-schema-table">
+            <p class="schema-table">{{ item.table }}</p>
+            <ul class="schema-columns">
+              <li v-for="column in item.columns" :key="column"><code>{{ column }}</code></li>
+            </ul>
+          </div>
           <p class="ui-muted hint">Только чтение. INSERT/UPDATE/DELETE здесь не выполняются — добавляйте товары в магазине.</p>
         </UiCard>
       </div>
@@ -60,25 +63,41 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import api from '@/api/client'
 import SqlMonacoEditor from '@/components/SqlMonacoEditor.vue'
 import { useShellI18n } from '@/composables/useShellI18n'
 
 const { t } = useShellI18n()
 
-const EXAMPLE = 'SELECT product_name, price\nFROM products\nORDER BY price DESC;'
+const EXAMPLE = 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nLEFT JOIN orders o ON c.customer_id = o.customer_id\nORDER BY c.full_name;'
 
-const sql = ref('SELECT * FROM products;')
+const sql = ref('SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nLEFT JOIN orders o ON c.customer_id = o.customer_id;')
 const loading = ref(false)
 const error = ref('')
 const result = ref(null)
-const schema = ref({ table: 'products', columns: ['product_id', 'product_name', 'price'] })
+const schema = ref({
+  table: 'products',
+  columns: ['product_id', 'product_name', 'price'],
+  tables: [
+    { table: 'products', columns: ['product_id', 'product_name', 'price'] },
+    { table: 'customers', columns: ['customer_id', 'full_name', 'city', 'email'] },
+    { table: 'orders', columns: ['order_id', 'customer_id', 'status', 'amount', 'created_at'] }
+  ]
+})
+
+const schemaTables = computed(() => {
+  if (schema.value?.tables?.length) return schema.value.tables
+  if (schema.value?.table) {
+    return [{ table: schema.value.table, columns: schema.value.columns || [] }]
+  }
+  return []
+})
 
 onMounted(async () => {
   try {
     const response = await api.get('/api/sql/schema')
-    if (response.data?.table) schema.value = response.data
+    if (response.data?.tables?.length || response.data?.table) schema.value = response.data
   } catch {
     /* keep local fallback */
   }
@@ -150,6 +169,10 @@ function formatCell(value) {
 .shortcut-hint {
   margin: 0.55rem 0 0;
   font-size: 0.78rem;
+}
+
+.schema-block + .schema-block {
+  margin-top: 0.75rem;
 }
 
 .schema-table {

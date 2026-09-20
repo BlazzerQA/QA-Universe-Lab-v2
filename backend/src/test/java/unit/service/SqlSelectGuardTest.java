@@ -39,6 +39,23 @@ class SqlSelectGuardTest {
     }
 
     @Test
+    void allowsJoinCustomersAndOrders() {
+        String sql = SqlSelectGuard.validate(
+                "SELECT c.full_name, o.order_id FROM customers c LEFT JOIN orders o ON c.customer_id = o.customer_id"
+        );
+        assertEquals(
+                "SELECT c.full_name, o.order_id FROM customers c LEFT JOIN orders o ON c.customer_id = o.customer_id",
+                sql
+        );
+    }
+
+    @Test
+    void allowsSelectFromCustomers() {
+        String sql = SqlSelectGuard.validate("SELECT * FROM customers;");
+        assertEquals("SELECT * FROM customers", sql);
+    }
+
+    @Test
     void rejectsMultipleStatements() {
         assertThrows(SqlSandboxException.class, () -> SqlSelectGuard.validate("SELECT * FROM products; SELECT 1"));
     }
