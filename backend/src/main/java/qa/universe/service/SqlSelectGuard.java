@@ -31,15 +31,12 @@ public final class SqlSelectGuard {
             throw new SqlSandboxException("Введите SQL-запрос.");
         }
 
-        String trimmed = sql.trim();
+        String trimmed = stripComments(sql).trim();
         if (trimmed.endsWith(";")) {
             trimmed = trimmed.substring(0, trimmed.length() - 1).trim();
         }
         if (trimmed.contains(";")) {
             throw new SqlSandboxException("Можно выполнить только один SELECT.");
-        }
-        if (trimmed.contains("--") || trimmed.contains("/*") || trimmed.contains("*/")) {
-            throw new SqlSandboxException("Комментарии в запросе запрещены.");
         }
         if (!trimmed.matches("(?is)select\\b[\\s\\S]+")) {
             throw new SqlSandboxException("Разрешён только SELECT.");
@@ -61,5 +58,54 @@ public final class SqlSelectGuard {
             throw new SqlSandboxException("Укажите таблицу: FROM products, customers или orders.");
         }
         return trimmed;
+    }
+
+    /** Drops {@code --} and {@code /* *}{@code /} comments so students can annotate queries. */
+    static String stripComments(String sql) {
+        StringBuilder out = new StringBuilder(sql.length());
+        int i = 0;
+        char quote = 0;
+        while (i < sql.length()) {
+            char c = sql.charAt(i);
+            char next = i + 1 < sql.length() ? sql.charAt(i + 1) : 0;
+            if (quote != 0) {
+                out.append(c);
+                if (c == quote) {
+                    if (next == quote) {
+                        out.append(next);
+                        i += 2;
+                        continue;
+                    }
+                    quote = 0;
+                }
+                i++;
+                continue;
+            }
+            if (c == '\'' || c == '"') {
+                quote = c;
+                out.append(c);
+                i++;
+                continue;
+            }
+            if (c == '-' && next == '-') {
+                while (i < sql.length() && sql.charAt(i) != '\n') {
+                    i++;
+                }
+                out.append(' ');
+                continue;
+            }
+            if (c == '/' && next == '*') {
+                i += 2;
+                while (i + 1 < sql.length() && !(sql.charAt(i) == '*' && sql.charAt(i + 1) == '/')) {
+                    i++;
+                }
+                i = Math.min(i + 2, sql.length());
+                out.append(' ');
+                continue;
+            }
+            out.append(c);
+            i++;
+        }
+        return out.toString();
     }
 }

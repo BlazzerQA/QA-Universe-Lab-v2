@@ -1,63 +1,92 @@
 <template>
   <div class="sql-sandbox-page ui-page" data-testid="sql-sandbox-page">
-    <div class="ui-page-body">
-      <h1 class="ui-title">{{ t('sql.title') }}</h1>
-      <p class="ui-muted intro">
-        SELECT по <code>products</code> — как в магазине. Для JOIN две учебные таблицы:
-        <code>customers</code> и <code>orders</code>. В данных специально есть клиенты без заказов
-        и заказы без клиента — на них получаются все виды JOIN.
-      </p>
+    <div class="wb">
+      <SqlLessonPanel
+        :topics="SQL_LESSON_TOPICS"
+        :selected-id="selectedLesson"
+        :expanded="expandedTopics"
+        :lesson="currentLesson"
+        :loading="loading"
+        @toggle-topic="toggleTopic"
+        @select-lesson="selectLesson"
+      />
 
-      <div class="sandbox-grid">
-        <UiCard class="editor-card">
-          <h3>Запрос</h3>
-          <SqlMonacoEditor v-model="sql" :disabled="loading" @run="runQuery" />
-          <div class="button-row">
-            <UiButton variant="primary" data-testid="sql-run" :disabled="loading" @click="runQuery">
-              Выполнить
-            </UiButton>
-            <UiButton variant="secondary" data-testid="sql-example" :disabled="loading" @click="loadExample">
-              Пример
-            </UiButton>
-            <UiButton variant="ghost" data-testid="sql-clear" :disabled="loading" @click="clearEditor">
-              Очистить
-            </UiButton>
+      <div class="wb-center">
+        <section class="panel query">
+          <header class="panel-h">
+            <span class="panel-h-left">
+              <SqlGlyph name="query" :size="14" />
+              Query
+            </span>
+            <div class="toolbar">
+              <UiButton variant="primary" data-testid="sql-run" :disabled="loading" @click="runQuery">
+                <SqlGlyph name="play" :size="12" />
+                Run
+              </UiButton>
+              <UiButton variant="ghost" data-testid="sql-example" :disabled="loading" @click="loadExample">
+                <SqlGlyph name="bulb" :size="13" />
+                Example
+              </UiButton>
+              <UiButton variant="ghost" data-testid="sql-clear" :disabled="loading" @click="clearEditor">
+                <SqlGlyph name="trash" :size="13" />
+                Clear
+              </UiButton>
+            </div>
+          </header>
+          <div class="editor-host">
+            <SqlMonacoEditor v-model="sql" height="100%" :disabled="loading" @run="runQuery" />
           </div>
-          <p class="shortcut-hint ui-muted">Ctrl+Enter / ⌘Enter — выполнить</p>
-          <p v-if="error" class="ui-hint ui-hint--error" data-testid="sql-error">{{ error }}</p>
-        </UiCard>
+          <p v-if="error" class="ui-hint ui-hint--error editor-error" data-testid="sql-error">{{ error }}</p>
+        </section>
 
-        <UiCard class="schema-card">
-          <h3>Схема</h3>
-          <div v-for="item in schemaTables" :key="item.table" class="schema-block" data-testid="sql-schema-table">
-            <p class="schema-table">{{ item.table }}</p>
-            <ul class="schema-columns">
-              <li v-for="column in item.columns" :key="column"><code>{{ column }}</code></li>
-            </ul>
+        <section class="panel result">
+          <header class="panel-h">
+            <span class="panel-h-left">
+              <SqlGlyph name="result" :size="14" />
+              Result
+            </span>
+            <span v-if="result" class="panel-h-meta">{{ formatRowCount(result.rowCount) }}</span>
+          </header>
+          <div class="result-body">
+            <p v-if="!result && !error" class="empty" data-testid="sql-result-placeholder">
+              <img class="empty-art" src="/icons/sql/empty.png" alt="" width="220" height="165" />
+              Run a query to see rows.
+            </p>
+            <div v-else-if="result && result.columns.length" class="table-wrap" data-testid="sql-result-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th v-for="column in result.columns" :key="column">{{ column }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, rowIndex) in result.rows" :key="rowIndex">
+                    <td
+                      v-for="(cell, cellIndex) in row"
+                      :key="cellIndex"
+                      :class="{ 'is-null': cell === null || cell === undefined }"
+                    >
+                      {{ formatCell(cell) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p v-else-if="result" class="empty">No rows.</p>
           </div>
-          <p class="ui-muted hint">Только чтение. INSERT/UPDATE/DELETE здесь не выполняются — добавляйте товары в магазине.</p>
-        </UiCard>
+          <footer class="status" data-testid="sql-status">
+            <SqlGlyph name="check" :size="13" />
+            {{ statusText }}
+          </footer>
+        </section>
       </div>
 
-      <UiCard class="result-card">
-        <h3>Результат <span v-if="result" class="ui-muted">{{ result.rowCount }} строк</span></h3>
-        <p v-if="!result && !error" class="ui-muted" data-testid="sql-result-placeholder">Нажмите «Выполнить», чтобы увидеть таблицу.</p>
-        <div v-else-if="result && result.columns.length" class="table-wrap" data-testid="sql-result-table">
-          <table>
-            <thead>
-              <tr>
-                <th v-for="column in result.columns" :key="column">{{ column }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, rowIndex) in result.rows" :key="rowIndex">
-                <td v-for="(cell, cellIndex) in row" :key="cellIndex">{{ formatCell(cell) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p v-else-if="result" class="ui-muted">Запрос выполнен, строк нет.</p>
-      </UiCard>
+      <SqlSchemaPanel
+        :tables="schemaTables"
+        :open-tables="openTables"
+        @toggle-table="toggleTable"
+        @insert-snippet="insertSnippet"
+      />
     </div>
   </div>
 </template>
@@ -65,20 +94,27 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import api from '@/api/client'
+import { DEFAULT_SQL_LESSON_ID, getSqlLesson, SQL_LESSON_TOPICS } from '@/config/sqlLessons'
+import SqlGlyph from '@/components/SqlGlyph.vue'
+import SqlLessonPanel from '@/components/SqlLessonPanel.vue'
 import SqlMonacoEditor from '@/components/SqlMonacoEditor.vue'
-import { useShellI18n } from '@/composables/useShellI18n'
+import SqlSchemaPanel from '@/components/SqlSchemaPanel.vue'
+import '@/assets/styles/sql-workbench.css'
 
-const { t } = useShellI18n()
-
-const EXAMPLE = 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nLEFT JOIN orders o ON c.customer_id = o.customer_id\nORDER BY c.full_name;'
-
-const sql = ref('SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nLEFT JOIN orders o ON c.customer_id = o.customer_id;')
+const selectedLesson = ref(DEFAULT_SQL_LESSON_ID)
+const expandedTopics = ref({ join: true })
+const currentLesson = computed(() => getSqlLesson(selectedLesson.value))
+const sql = ref(getSqlLesson(DEFAULT_SQL_LESSON_ID).sql)
 const loading = ref(false)
 const error = ref('')
 const result = ref(null)
+const elapsedMs = ref(null)
+const openTables = ref({
+  products: false,
+  customers: true,
+  orders: true
+})
 const schema = ref({
-  table: 'products',
-  columns: ['product_id', 'product_name', 'price'],
   tables: [
     { table: 'products', columns: ['product_id', 'product_name', 'price'] },
     { table: 'customers', columns: ['customer_id', 'full_name', 'city', 'email'] },
@@ -86,30 +122,67 @@ const schema = ref({
   ]
 })
 
-const schemaTables = computed(() => {
-  if (schema.value?.tables?.length) return schema.value.tables
-  if (schema.value?.table) {
-    return [{ table: schema.value.table, columns: schema.value.columns || [] }]
-  }
-  return []
+const schemaTables = computed(() => schema.value?.tables || [])
+
+const statusText = computed(() => {
+  const parts = ['read-only']
+  if (elapsedMs.value != null) parts.unshift(`${elapsedMs.value} ms`)
+  if (result.value) parts.unshift(formatRowCount(result.value.rowCount))
+  return parts.join(' · ')
 })
 
 onMounted(async () => {
   try {
     const response = await api.get('/api/sql/schema')
-    if (response.data?.tables?.length || response.data?.table) schema.value = response.data
+    if (response.data?.tables?.length) {
+      schema.value = response.data
+      const next = { ...openTables.value }
+      for (const item of response.data.tables) {
+        if (next[item.table] === undefined) next[item.table] = false
+      }
+      openTables.value = next
+    }
   } catch {
     /* keep local fallback */
   }
 })
 
+function isTableOpen(name) {
+  return openTables.value[name] === true
+}
+
+function toggleTable(name) {
+  openTables.value = { ...openTables.value, [name]: !isTableOpen(name) }
+}
+
+function toggleTopic(id) {
+  expandedTopics.value = { ...expandedTopics.value, [id]: !expandedTopics.value[id] }
+}
+
+function selectLesson(id) {
+  selectedLesson.value = id
+  sql.value = getSqlLesson(id).sql
+  error.value = ''
+  result.value = null
+  elapsedMs.value = null
+}
+
+function insertSnippet(text) {
+  const current = sql.value || ''
+  const glue = current && !/\s$/.test(current) ? ' ' : ''
+  sql.value = `${current}${glue}${text}`
+}
+
 async function runQuery() {
   loading.value = true
   error.value = ''
   result.value = null
+  elapsedMs.value = null
+  const started = performance.now()
   try {
     const response = await api.post('/api/sql/query', { sql: sql.value })
     result.value = response.data
+    elapsedMs.value = Math.max(1, Math.round(performance.now() - started))
   } catch (e) {
     error.value = e.response?.data?.message || e.message || 'Не удалось выполнить запрос.'
   } finally {
@@ -118,7 +191,7 @@ async function runQuery() {
 }
 
 function loadExample() {
-  sql.value = EXAMPLE
+  sql.value = currentLesson.value.sql
   error.value = ''
 }
 
@@ -126,6 +199,11 @@ function clearEditor() {
   sql.value = ''
   error.value = ''
   result.value = null
+  elapsedMs.value = null
+}
+
+function formatRowCount(count) {
+  return `${count} rows`
 }
 
 function formatCell(value) {
@@ -135,71 +213,98 @@ function formatCell(value) {
 </script>
 
 <style scoped>
-.intro {
-  margin: 0 0 1.25rem;
-  max-width: 46rem;
+.sql-sandbox-page {
+  height: calc(100vh - var(--header-h));
+  overflow: hidden;
+  background: var(--bg);
 }
 
-.intro code,
-.schema-columns code {
-  font-family: var(--mono);
-  font-size: 0.9em;
-}
-
-.sandbox-grid {
+.wb {
+  height: 100%;
+  padding: 12px;
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.8fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
+  grid-template-columns: 264px minmax(0, 1fr) 280px;
+  gap: 10px;
+  min-height: 0;
 }
 
-.editor-card h3,
-.schema-card h3,
-.result-card h3 {
-  margin: 0 0 0.75rem;
-  color: var(--heading);
+.wb-center {
+  display: grid;
+  grid-template-rows: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
 }
 
-.button-row {
+.toolbar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 6px;
 }
 
-.shortcut-hint {
-  margin: 0.55rem 0 0;
-  font-size: 0.78rem;
+.toolbar :deep(.ui-btn) {
+  padding: 6px 12px;
+  font-size: 0.8rem;
 }
 
-.schema-block + .schema-block {
-  margin-top: 0.75rem;
+.editor-host {
+  flex: 1;
+  min-height: 0;
 }
 
-.schema-table {
-  margin: 0 0 0.5rem;
-  font-weight: 700;
-  color: var(--heading);
-  font-family: var(--mono);
-}
-
-.schema-columns {
-  margin: 0 0 1rem;
-  padding-left: 1.1rem;
-  color: var(--text);
-}
-
-.hint {
+.editor-host :deep(.qa-monaco) {
+  height: 100% !important;
   margin: 0;
-  font-size: 0.85rem;
+  border: 0;
+  border-radius: 0;
 }
 
-.result-card h3 .ui-muted {
-  font-weight: 500;
-  font-size: 0.9rem;
+.editor-error {
+  margin: 0;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.result-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.empty-art {
+  width: min(240px, 82%);
+  height: auto;
+  object-fit: contain;
+  background: transparent;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  padding: 16px 12px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  min-height: 100%;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-top: 1px solid var(--border);
+  color: var(--success);
+  font-family: var(--mono);
+  font-size: 0.72rem;
 }
 
 .table-wrap {
-  overflow-x: auto;
+  overflow: auto;
+  height: 100%;
 }
 
 table {
@@ -209,26 +314,50 @@ table {
 
 th,
 td {
-  border: 1px solid var(--border);
-  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  padding: 7px 10px;
   text-align: left;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 th {
-  background: var(--primary-muted);
-  color: var(--heading);
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  color: var(--muted);
   font-family: var(--mono);
-  font-size: 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 600;
 }
 
 td {
   font-family: var(--mono);
+  color: var(--text);
 }
 
-@media (max-width: 768px) {
-  .sandbox-grid {
+td.is-null {
+  color: var(--muted);
+  font-style: italic;
+}
+
+tbody tr:hover td {
+  background: var(--primary-muted);
+}
+
+@media (max-width: 1100px) {
+  .sql-sandbox-page {
+    height: auto;
+    overflow: visible;
+  }
+
+  .wb {
     grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .wb-center {
+    grid-template-rows: 320px 280px;
   }
 }
 </style>

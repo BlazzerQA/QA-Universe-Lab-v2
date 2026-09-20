@@ -1,0 +1,43 @@
+/* Shared chrome for SQL workbench panels. Imported by the sandbox view so children inherit it. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.panel-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.panel-h-meta {
+  font-family: var(--mono);
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 500;
+}
+
+.panel-body {
+  padding: 12px;
+  overflow: auto;
+}
+
+.panel-h-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
