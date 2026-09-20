@@ -8,37 +8,49 @@
             Lesson
           </span>
         </header>
-        <div class="panel-body">
-          <p class="rail-label">
-            JOIN Type
-          </p>
-          <img class="join-art" src="/icons/sql/join.png" alt="" width="88" height="88" />
-          <div class="join-list" role="tablist" aria-label="Виды JOIN">
-            <button
-              v-for="lesson in JOIN_LESSONS"
-              :key="lesson.id"
-              type="button"
-              class="join-btn"
-              :class="{ 'is-active': selectedJoin === lesson.id }"
-              role="tab"
-              :aria-selected="selectedJoin === lesson.id"
-              :data-testid="`sql-join-${lesson.id}`"
-              :disabled="loading"
-              @click="selectJoin(lesson.id)"
-            >
-              {{ lesson.chip }}
-            </button>
+        <div class="panel-body lesson-body">
+          <nav class="topic-nav" aria-label="SQL lessons">
+            <section v-for="(topic, index) in LESSON_TOPICS" :key="topic.id" class="topic-section">
+              <button
+                type="button"
+                class="topic-toggle"
+                :aria-expanded="isTopicOpen(topic.id)"
+                :data-testid="`sql-topic-${topic.id}`"
+                @click="toggleTopic(topic.id)"
+              >
+                <span class="topic-chevron" aria-hidden="true">{{ isTopicOpen(topic.id) ? '▾' : '▸' }}</span>
+                <img class="topic-logo" :src="topic.logo" alt="" width="18" height="18" />
+                <span class="topic-title">{{ index + 1 }}. {{ topic.title }}</span>
+                <span class="topic-count">{{ topic.items.length }}</span>
+              </button>
+              <ul v-if="isTopicOpen(topic.id)" class="lesson-list">
+                <li v-for="item in topic.items" :key="item.id">
+                  <button
+                    type="button"
+                    class="lesson-link"
+                    :class="{ active: selectedLesson === item.id }"
+                    :data-testid="item.testId"
+                    :disabled="loading"
+                    @click="selectLesson(item.id)"
+                  >
+                    {{ item.title }}
+                  </button>
+                </li>
+              </ul>
+            </section>
+          </nav>
+          <div class="lesson-meta">
+            <p class="rail-label">
+              <SqlGlyph name="target" :size="13" />
+              Task
+            </p>
+            <p class="rail-text">{{ currentLesson.task }}</p>
+            <p class="rail-label">
+              <SqlGlyph name="bulb" :size="13" />
+              Hint
+            </p>
+            <p class="rail-text muted">{{ currentLesson.hint }}</p>
           </div>
-          <p class="rail-label">
-            <SqlGlyph name="target" :size="13" />
-            Task
-          </p>
-          <p class="rail-text">{{ currentLesson.task }}</p>
-          <p class="rail-label">
-            <SqlGlyph name="bulb" :size="13" />
-            Hint
-          </p>
-          <p class="rail-text muted">{{ currentLesson.hint }}</p>
         </div>
       </aside>
 
@@ -188,53 +200,153 @@ import api from '@/api/client'
 import SqlGlyph from '@/components/SqlGlyph.vue'
 import SqlMonacoEditor from '@/components/SqlMonacoEditor.vue'
 
-const JOIN_LESSONS = [
+const LESSON_TOPICS = [
   {
-    id: 'inner',
-    chip: 'INNER',
-    task: 'Только пары клиент–заказ. 3 строки: Анна дважды, Борис один раз.',
-    hint: 'Вера и Глеб не попадут — у них нет заказов.',
-    sql: 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nINNER JOIN orders o ON c.customer_id = o.customer_id;'
+    id: 'select',
+    title: 'SELECT',
+    logo: '/icons/sql/select.svg',
+    items: [
+      {
+        id: 'select-all',
+        testId: 'sql-lesson-select-all',
+        title: 'Все колонки',
+        task: 'Выведите все товары целиком. 3 строки: Ноутбук, Мышь, Кофе.',
+        hint: 'SELECT * читает все колонки. Для разведки схемы это ок, в отчётах лучше перечислять поля.',
+        sql: 'SELECT * FROM products;'
+      },
+      {
+        id: 'select-cols',
+        testId: 'sql-lesson-select-cols',
+        title: 'Нужные поля',
+        task: 'Только название и цена товара — без product_id.',
+        hint: 'Перечислите колонки через запятую: product_name, price.',
+        sql: 'SELECT product_name, price FROM products;'
+      },
+      {
+        id: 'select-order',
+        testId: 'sql-lesson-select-order',
+        title: 'ORDER BY',
+        task: 'Те же поля, но сначала самый дорогой. Ноутбук сверху.',
+        hint: 'ORDER BY price DESC. Без DESC SQLite сортирует по возрастанию.',
+        sql: 'SELECT product_name, price FROM products ORDER BY price DESC;'
+      }
+    ]
   },
   {
-    id: 'left',
-    chip: 'LEFT',
-    task: 'Все клиенты. 5 строк, у Веры и Глеба order_id = NULL.',
-    hint: 'Не фильтруйте WHERE o.status — LEFT превратится в INNER.',
-    sql: 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nLEFT JOIN orders o ON c.customer_id = o.customer_id\nORDER BY c.full_name;'
+    id: 'join',
+    title: 'JOIN',
+    logo: '/icons/sql/join.png',
+    items: [
+      {
+        id: 'inner',
+        testId: 'sql-join-inner',
+        title: 'INNER JOIN',
+        task: 'Только пары клиент–заказ. 3 строки: Анна дважды, Борис один раз.',
+        hint: 'Вера и Глеб не попадут — у них нет заказов.',
+        sql: 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nINNER JOIN orders o ON c.customer_id = o.customer_id;'
+      },
+      {
+        id: 'left',
+        testId: 'sql-join-left',
+        title: 'LEFT JOIN',
+        task: 'Все клиенты. 5 строк, у Веры и Глеба order_id = NULL.',
+        hint: 'Не фильтруйте WHERE o.status — LEFT превратится в INNER.',
+        sql: 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nLEFT JOIN orders o ON c.customer_id = o.customer_id\nORDER BY c.full_name;'
+      },
+      {
+        id: 'right',
+        testId: 'sql-join-right',
+        title: 'RIGHT JOIN',
+        task: 'Все заказы. У 104 и 105 имя клиента NULL.',
+        hint: 'То же самое: FROM orders LEFT JOIN customers.',
+        sql: 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nRIGHT JOIN orders o ON c.customer_id = o.customer_id;'
+      },
+      {
+        id: 'full',
+        testId: 'sql-join-full',
+        title: 'FULL JOIN',
+        task: 'И клиенты без заказов, и заказы без клиента. 7 строк.',
+        hint: 'Дырки: WHERE c.customer_id IS NULL OR o.order_id IS NULL.',
+        sql: 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nFULL JOIN orders o ON c.customer_id = o.customer_id;'
+      },
+      {
+        id: 'cross',
+        testId: 'sql-join-cross',
+        title: 'CROSS JOIN',
+        task: 'Декарт: 4 клиента × 5 заказов = 20 строк.',
+        hint: 'Для связи клиент–заказ это ошибка, не приём.',
+        sql: 'SELECT c.full_name, o.order_id\nFROM customers c\nCROSS JOIN orders o;'
+      },
+      {
+        id: 'self',
+        testId: 'sql-join-self',
+        title: 'SELF JOIN',
+        task: 'Пары клиентов из одного города. Анна и Вера — Москва.',
+        hint: 'a.customer_id < b.customer_id убирает дубли.',
+        sql: 'SELECT a.full_name AS customer_a, b.full_name AS customer_b, a.city\nFROM customers a\nJOIN customers b ON a.city = b.city AND a.customer_id < b.customer_id;'
+      }
+    ]
   },
   {
-    id: 'right',
-    chip: 'RIGHT',
-    task: 'Все заказы. У 104 и 105 имя клиента NULL.',
-    hint: 'То же самое: FROM orders LEFT JOIN customers.',
-    sql: 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nRIGHT JOIN orders o ON c.customer_id = o.customer_id;'
+    id: 'where',
+    title: 'WHERE',
+    logo: '/icons/sql/where.svg',
+    items: [
+      {
+        id: 'where-cmp',
+        testId: 'sql-lesson-where-cmp',
+        title: 'Сравнение',
+        task: 'Товары дороже 1000 ₽. Ноутбук и Мышь, Кофе не проходит.',
+        hint: 'WHERE price > 1000. Сравнение идёт до JOIN-логики, на строках одной таблицы.',
+        sql: 'SELECT product_name, price FROM products WHERE price > 1000;'
+      },
+      {
+        id: 'where-like',
+        testId: 'sql-lesson-where-like',
+        title: 'LIKE',
+        task: 'Клиенты, у кого город начинается на «М». Анна и Вера — Москва.',
+        hint: 'LIKE \'М%\' — % это любая последовательность символов.',
+        sql: "SELECT full_name, city FROM customers WHERE city LIKE 'М%';"
+      },
+      {
+        id: 'where-null',
+        testId: 'sql-lesson-where-null',
+        title: 'IS NULL',
+        task: 'Заказы без клиента. Строки 104 и 105.',
+        hint: 'NULL нельзя сравнить через =. Только IS NULL / IS NOT NULL.',
+        sql: 'SELECT order_id, status, amount FROM orders WHERE customer_id IS NULL;'
+      }
+    ]
   },
   {
-    id: 'full',
-    chip: 'FULL',
-    task: 'И клиенты без заказов, и заказы без клиента. 7 строк.',
-    hint: 'Дырки: WHERE c.customer_id IS NULL OR o.order_id IS NULL.',
-    sql: 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nFULL JOIN orders o ON c.customer_id = o.customer_id;'
-  },
-  {
-    id: 'cross',
-    chip: 'CROSS',
-    task: 'Декарт: 4 клиента × 5 заказов = 20 строк.',
-    hint: 'Для связи клиент–заказ это ошибка, не приём.',
-    sql: 'SELECT c.full_name, o.order_id\nFROM customers c\nCROSS JOIN orders o;'
-  },
-  {
-    id: 'self',
-    chip: 'SELF',
-    task: 'Пары клиентов из одного города. Анна и Вера — Москва.',
-    hint: 'a.customer_id < b.customer_id убирает дубли.',
-    sql: 'SELECT a.full_name AS customer_a, b.full_name AS customer_b, a.city\nFROM customers a\nJOIN customers b ON a.city = b.city AND a.customer_id < b.customer_id;'
+    id: 'agg',
+    title: 'GROUP BY',
+    logo: '/icons/sql/agg.svg',
+    items: [
+      {
+        id: 'agg-count',
+        testId: 'sql-lesson-agg-count',
+        title: 'COUNT',
+        task: 'Сколько всего клиентов. Одна строка со значением 4.',
+        hint: 'COUNT(*) считает строки, COUNT(column) пропускает NULL.',
+        sql: 'SELECT COUNT(*) AS customers_count FROM customers;'
+      },
+      {
+        id: 'agg-status',
+        testId: 'sql-lesson-agg-status',
+        title: 'По status',
+        task: 'Число заказов в каждом статусе. GROUP BY status.',
+        hint: 'В SELECT могут быть только ключ группировки и агрегаты — не full_name без GROUP BY.',
+        sql: 'SELECT status, COUNT(*) AS orders_count FROM orders GROUP BY status;'
+      }
+    ]
   }
 ]
 
-const selectedJoin = ref('left')
-const sql = ref(JOIN_LESSONS[1].sql)
+const lessonItems = LESSON_TOPICS.flatMap((topic) => topic.items)
+const selectedLesson = ref('left')
+const expandedTopics = ref({ join: true })
+const sql = ref(lessonItems.find((item) => item.id === 'left').sql)
 const loading = ref(false)
 const error = ref('')
 const result = ref(null)
@@ -255,7 +367,7 @@ const schema = ref({
 const schemaTables = computed(() => schema.value?.tables || [])
 
 const currentLesson = computed(
-  () => JOIN_LESSONS.find((lesson) => lesson.id === selectedJoin.value) || JOIN_LESSONS[1]
+  () => lessonItems.find((lesson) => lesson.id === selectedLesson.value) || lessonItems[4]
 )
 
 const statusText = computed(() => {
@@ -289,9 +401,17 @@ function toggleTable(name) {
   openTables.value = { ...openTables.value, [name]: !isTableOpen(name) }
 }
 
-function selectJoin(id) {
-  selectedJoin.value = id
-  const lesson = JOIN_LESSONS.find((item) => item.id === id)
+function isTopicOpen(id) {
+  return expandedTopics.value[id] === true
+}
+
+function toggleTopic(id) {
+  expandedTopics.value = { ...expandedTopics.value, [id]: !isTopicOpen(id) }
+}
+
+function selectLesson(id) {
+  selectedLesson.value = id
+  const lesson = lessonItems.find((item) => item.id === id)
   if (lesson) sql.value = lesson.sql
   error.value = ''
   result.value = null
@@ -366,7 +486,7 @@ function formatCell(value) {
   height: 100%;
   padding: 12px;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 280px;
+  grid-template-columns: 248px minmax(0, 1fr) 280px;
   gap: 10px;
   min-height: 0;
 }
@@ -416,6 +536,122 @@ function formatCell(value) {
   overflow: auto;
 }
 
+.lesson-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.topic-nav {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 10px 10px;
+}
+
+.topic-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.topic-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  margin: 0;
+  padding: 7px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.topic-toggle:hover {
+  background: var(--primary-muted);
+}
+
+.topic-chevron {
+  width: 0.9rem;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.topic-logo {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  object-fit: contain;
+  background: transparent;
+}
+
+.topic-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.topic-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.lesson-list {
+  list-style: none;
+  margin: 0.1rem 0 0.35rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.lesson-list li + li .lesson-link {
+  border-top: 1px solid var(--border);
+}
+
+.lesson-link {
+  display: block;
+  width: 100%;
+  padding: 8px 10px 8px 12px;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: none;
+  color: var(--text);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lesson-link:hover:not(:disabled),
+.lesson-link:focus-visible {
+  background: var(--primary-muted);
+  color: var(--primary);
+  border-left-color: var(--primary);
+}
+
+.lesson-link.active {
+  background: var(--primary-muted);
+  color: var(--primary);
+  font-weight: 600;
+  border-left-color: var(--primary);
+}
+
+.lesson-meta {
+  flex-shrink: 0;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--border);
+}
+
 .toolbar {
   display: flex;
   gap: 6px;
@@ -453,39 +689,7 @@ function formatCell(value) {
 }
 
 .rail-label:not(:first-child) {
-  margin-top: 16px;
-}
-
-.join-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.join-btn {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--panel);
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-align: left;
-  cursor: pointer;
-}
-
-.join-btn:hover:not(:disabled) {
-  border-color: var(--primary);
-  color: var(--heading);
-}
-
-.join-btn.is-active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--primary-text);
+  margin-top: 12px;
 }
 
 .rail-text {
@@ -523,14 +727,11 @@ function formatCell(value) {
   overflow: auto;
 }
 
-.join-art {
-  display: block;
-  width: 72px;
-  height: 72px;
-  margin: 0 auto 10px;
-  object-fit: cover;
-  border-radius: 12px;
-  border: 1px solid var(--border);
+.empty-art {
+  width: min(240px, 82%);
+  height: auto;
+  object-fit: contain;
+  background: transparent;
 }
 
 .panel-ic,
@@ -552,14 +753,6 @@ function formatCell(value) {
   color: var(--muted);
   font-size: 0.85rem;
   min-height: 100%;
-}
-
-.empty-art {
-  width: min(240px, 80%);
-  height: auto;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  object-fit: cover;
 }
 
 .er-kicker {
