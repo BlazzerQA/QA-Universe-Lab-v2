@@ -10,9 +10,9 @@
         </header>
         <div class="panel-body">
           <p class="rail-label">
-            <SqlGlyph name="join" :size="13" />
             JOIN Type
           </p>
+          <img class="join-art" src="/icons/sql/join.png" alt="" width="88" height="88" />
           <div class="join-list" role="tablist" aria-label="Виды JOIN">
             <button
               v-for="lesson in JOIN_LESSONS"
@@ -80,6 +80,7 @@
           </header>
           <div class="result-body">
             <p v-if="!result && !error" class="empty" data-testid="sql-result-placeholder">
+              <img class="empty-art" src="/icons/sql/empty.png" alt="" width="220" height="165" />
               Run a query to see rows.
             </p>
             <div v-else-if="result && result.columns.length" class="table-wrap" data-testid="sql-result-table">
@@ -114,51 +115,66 @@
       <aside class="panel schema">
         <header class="panel-h">
           <span class="panel-h-left">
-            <SqlGlyph name="schema" :size="14" />
+            <img class="panel-ic" src="/icons/sql/db.png" alt="" width="20" height="20" />
             Schema
           </span>
         </header>
         <div class="panel-body tree">
+          <p class="er-kicker">ER Diagram</p>
           <div class="er" data-testid="sql-er">
-            <div class="er-box">
-              <strong>customers</strong>
-              <span class="is-key">customer_id PK</span>
-              <span>full_name</span>
-              <span>city</span>
+            <div class="er-cards">
+              <div class="er-box er-box--customers">
+                <strong>customers</strong>
+                <span class="is-key">customer_id (PK)</span>
+                <span>full_name</span>
+                <span>city</span>
+                <span>email</span>
+              </div>
+              <div class="er-box er-box--orders">
+                <strong>orders</strong>
+                <span>order_id (PK)</span>
+                <span class="is-key">customer_id (FK)</span>
+                <span>status</span>
+                <span>amount</span>
+              </div>
             </div>
-            <div class="er-join">
-              <span class="er-dot" />
-              <span class="er-line" />
+            <div class="er-link" aria-hidden="true">
+              <span class="er-brace" />
               <span class="er-caption">customer_id</span>
             </div>
-            <div class="er-box er-box--orders">
-              <strong>orders</strong>
-              <span>order_id PK</span>
-              <span class="is-key">customer_id FK</span>
-              <span>amount</span>
-            </div>
           </div>
-          <p class="tree-root">
-            <SqlGlyph name="folder" :size="12" />
-            TABLES
-          </p>
-          <div v-for="item in schemaTables" :key="item.table" data-testid="sql-schema-table">
-            <button type="button" class="tree-table" @click="insertSnippet(item.table)">
-              <SqlGlyph name="table" :size="13" />
-              {{ item.table }}
-            </button>
-            <button
-              v-for="column in item.columns"
-              :key="column"
-              type="button"
-              class="tree-col"
-              @click="insertSnippet(`${item.table}.${column}`)"
-            >
-              {{ column }}
-              <span v-if="columnMark(item.table, column)" class="mark">{{
-                columnMark(item.table, column)
-              }}</span>
-            </button>
+          <p class="tree-root">Schema Details</p>
+          <div v-for="item in schemaTables" :key="item.table" class="tree-node" data-testid="sql-schema-table">
+            <div class="tree-row">
+              <button
+                type="button"
+                class="tree-toggle"
+                :class="{ 'is-open': isTableOpen(item.table) }"
+                :aria-expanded="isTableOpen(item.table)"
+                :aria-label="`Toggle ${item.table}`"
+                @click="toggleTable(item.table)"
+              >
+                <SqlGlyph name="chevron" :size="12" />
+              </button>
+              <button type="button" class="tree-table" @click="insertSnippet(item.table)">
+                <img class="tree-ic" src="/icons/sql/grid.png" alt="" width="14" height="14" />
+                {{ item.table }}
+              </button>
+            </div>
+            <div v-show="isTableOpen(item.table)" class="tree-cols">
+              <button
+                v-for="column in item.columns"
+                :key="column"
+                type="button"
+                class="tree-col"
+                @click="insertSnippet(`${item.table}.${column}`)"
+              >
+                {{ column }}
+                <span v-if="columnMark(item.table, column)" class="mark">{{
+                  columnMark(item.table, column)
+                }}</span>
+              </button>
+            </div>
           </div>
         </div>
       </aside>
@@ -223,6 +239,11 @@ const loading = ref(false)
 const error = ref('')
 const result = ref(null)
 const elapsedMs = ref(null)
+const openTables = ref({
+  products: false,
+  customers: true,
+  orders: true
+})
 const schema = ref({
   tables: [
     { table: 'products', columns: ['product_id', 'product_name', 'price'] },
@@ -247,11 +268,26 @@ const statusText = computed(() => {
 onMounted(async () => {
   try {
     const response = await api.get('/api/sql/schema')
-    if (response.data?.tables?.length) schema.value = response.data
+    if (response.data?.tables?.length) {
+      schema.value = response.data
+      const next = { ...openTables.value }
+      for (const item of response.data.tables) {
+        if (next[item.table] === undefined) next[item.table] = false
+      }
+      openTables.value = next
+    }
   } catch {
     /* keep local fallback */
   }
 })
+
+function isTableOpen(name) {
+  return openTables.value[name] === true
+}
+
+function toggleTable(name) {
+  openTables.value = { ...openTables.value, [name]: !isTableOpen(name) }
+}
 
 function selectJoin(id) {
   selectedJoin.value = id
@@ -330,7 +366,7 @@ function formatCell(value) {
   height: 100%;
   padding: 12px;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 240px;
+  grid-template-columns: 220px minmax(0, 1fr) 280px;
   gap: 10px;
   min-height: 0;
 }
@@ -487,11 +523,52 @@ function formatCell(value) {
   overflow: auto;
 }
 
+.join-art {
+  display: block;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 10px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.panel-ic,
+.tree-ic {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
 .empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   margin: 0;
   padding: 16px 12px;
   color: var(--muted);
   font-size: 0.85rem;
+  min-height: 100%;
+}
+
+.empty-art {
+  width: min(240px, 80%);
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
+
+.er-kicker {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .status {
@@ -507,10 +584,18 @@ function formatCell(value) {
 }
 
 .er {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  gap: 4px;
+  align-items: stretch;
+  margin-bottom: 14px;
+}
+
+.er-cards {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  margin-bottom: 4px;
+  gap: 12px;
+  min-width: 0;
 }
 
 .er-box {
@@ -535,35 +620,61 @@ function formatCell(value) {
   color: var(--primary);
 }
 
-.er-box--orders {
+.er-box--customers {
   border-color: var(--primary);
 }
 
-.er-join {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2px 0;
+.er-box--orders {
+  border-color: #8b5cf6;
 }
 
-.er-dot {
-  width: 7px;
-  height: 7px;
+.er-link {
+  position: relative;
+  min-height: 100%;
+}
+
+.er-brace {
+  position: absolute;
+  left: 0;
+  top: 22%;
+  bottom: 22%;
+  width: 16px;
+  border: 2px solid var(--primary);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.er-brace::before,
+.er-brace::after {
+  content: '';
+  position: absolute;
+  left: -5px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  border: 1.5px solid var(--primary);
+  border: 2px solid var(--primary);
   background: var(--card);
 }
 
-.er-line {
-  width: 1px;
-  height: 14px;
-  background: var(--primary);
+.er-brace::before {
+  top: -5px;
+}
+
+.er-brace::after {
+  bottom: -5px;
 }
 
 .er-caption {
-  font-size: 0.62rem;
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--primary);
-  padding: 2px 0;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  writing-mode: vertical-rl;
+  transform: translateY(-50%) rotate(180deg);
+  letter-spacing: 0.04em;
 }
 
 .tree-root {
@@ -575,6 +686,41 @@ function formatCell(value) {
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+}
+
+.tree-node + .tree-node {
+  margin-top: 2px;
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tree-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tree-toggle:hover {
+  color: var(--heading);
+}
+
+.tree-toggle :deep(.sql-glyph) {
+  transition: transform 0.15s ease;
+}
+
+.tree-toggle.is-open :deep(.sql-glyph) {
+  transform: rotate(90deg);
 }
 
 .tree-table,
@@ -594,13 +740,13 @@ function formatCell(value) {
 }
 
 .tree-table {
-  margin-top: 8px;
+  margin-top: 0;
   color: var(--heading);
   font-weight: 700;
 }
 
 .tree-col {
-  padding-left: 14px;
+  padding-left: 32px;
   color: var(--muted);
 }
 

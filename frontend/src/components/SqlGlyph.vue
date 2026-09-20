@@ -55,6 +55,9 @@
       <circle cx="17" cy="12" r="2.4" />
       <path d="M9.2 8.8L14.7 11.2M9.2 15.2L14.7 12.8" />
     </g>
+    <g v-else-if="name === 'chevron'" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 6l6 6-6 6" />
+    </g>
   </svg>
 </template>
 
