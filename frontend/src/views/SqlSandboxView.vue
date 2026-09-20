@@ -40,16 +40,98 @@
             </section>
           </nav>
           <div class="lesson-meta">
-            <p class="rail-label">
-              <SqlGlyph name="target" :size="13" />
-              Task
-            </p>
-            <p class="rail-text">{{ currentLesson.task }}</p>
-            <p class="rail-label">
-              <SqlGlyph name="bulb" :size="13" />
-              Hint
-            </p>
-            <p class="rail-text muted">{{ currentLesson.hint }}</p>
+            <article
+              class="flash flash--task"
+              data-testid="sql-task-card"
+              @pointerdown="onFlashPointerDown"
+              @pointerup="onFlashPointerUp('task', $event)"
+            >
+              <header class="flash-h">
+                <span class="flash-kicker">
+                  <SqlGlyph name="target" :size="13" />
+                  Task
+                </span>
+                <span class="flash-step">{{ taskIndex + 1 }}/{{ currentTasks.length }}</span>
+              </header>
+              <p class="flash-text">{{ currentTasks[taskIndex] }}</p>
+              <div class="flash-nav">
+                <button
+                  type="button"
+                  class="flash-arrow"
+                  aria-label="Предыдущее задание"
+                  data-testid="sql-task-prev"
+                  @click="shiftCard('task', -1)"
+                >
+                  <SqlGlyph name="chevron" :size="12" />
+                </button>
+                <div class="flash-dots" role="tablist" aria-label="Задания">
+                  <button
+                    v-for="(_, index) in currentTasks"
+                    :key="'task-dot-' + index"
+                    type="button"
+                    class="flash-dot"
+                    :class="{ 'is-on': index === taskIndex }"
+                    :aria-label="`Задание ${index + 1}`"
+                    @click="taskIndex = index"
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="flash-arrow flash-arrow--next"
+                  aria-label="Следующее задание"
+                  data-testid="sql-task-next"
+                  @click="shiftCard('task', 1)"
+                >
+                  <SqlGlyph name="chevron" :size="12" />
+                </button>
+              </div>
+            </article>
+            <article
+              class="flash flash--hint"
+              data-testid="sql-hint-card"
+              @pointerdown="onFlashPointerDown"
+              @pointerup="onFlashPointerUp('hint', $event)"
+            >
+              <header class="flash-h">
+                <span class="flash-kicker">
+                  <SqlGlyph name="bulb" :size="13" />
+                  Hint
+                </span>
+                <span class="flash-step">{{ hintIndex + 1 }}/{{ currentHints.length }}</span>
+              </header>
+              <p class="flash-text">{{ currentHints[hintIndex] }}</p>
+              <div class="flash-nav">
+                <button
+                  type="button"
+                  class="flash-arrow"
+                  aria-label="Предыдущая подсказка"
+                  data-testid="sql-hint-prev"
+                  @click="shiftCard('hint', -1)"
+                >
+                  <SqlGlyph name="chevron" :size="12" />
+                </button>
+                <div class="flash-dots" role="tablist" aria-label="Подсказки">
+                  <button
+                    v-for="(_, index) in currentHints"
+                    :key="'hint-dot-' + index"
+                    type="button"
+                    class="flash-dot"
+                    :class="{ 'is-on': index === hintIndex }"
+                    :aria-label="`Подсказка ${index + 1}`"
+                    @click="hintIndex = index"
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="flash-arrow flash-arrow--next"
+                  aria-label="Следующая подсказка"
+                  data-testid="sql-hint-next"
+                  @click="shiftCard('hint', 1)"
+                >
+                  <SqlGlyph name="chevron" :size="12" />
+                </button>
+              </div>
+            </article>
           </div>
         </div>
       </aside>
@@ -210,25 +292,56 @@ const LESSON_TOPICS = [
         id: 'select-all',
         testId: 'sql-lesson-select-all',
         title: 'Все колонки',
-        task: 'Выведите все товары целиком. 3 строки: Ноутбук, Мышь, Кофе.',
-        hint: 'SELECT * читает все колонки. Для разведки схемы это ок, в отчётах лучше перечислять поля.',
-        sql: 'SELECT * FROM products;'
+        tasks: [
+          'Выведите все товары целиком. 3 строки: Ноутбук, Мышь, Кофе.',
+          'Посчитайте глазами колонки результата: product_id, product_name, price.',
+          'Сравните * с явным списком полей — результат тот же, но схема видна сразу.'
+        ],
+        hints: [
+          'SELECT * читает все колонки. Для разведки схемы это ок, в отчётах лучше перечислять поля.',
+          '* — это «все столбцы», не «все строки». Строки режет WHERE.',
+          'Читается как: выбрать все столбцы из таблицы products.'
+        ],
+        sql: `-- читается как: выбрать все столбцы из таблицы products
+SELECT *        -- выбрать: все колонки
+FROM products;  -- из таблицы products`
       },
       {
         id: 'select-cols',
         testId: 'sql-lesson-select-cols',
         title: 'Нужные поля',
-        task: 'Только название и цена товара — без product_id.',
-        hint: 'Перечислите колонки через запятую: product_name, price.',
-        sql: 'SELECT product_name, price FROM products;'
+        tasks: [
+          'Только название и цена товара — без product_id.',
+          'Поменяйте порядок: сначала price, потом product_name.',
+          'Добавьте product_id обратно и сравните, какие колонки лишние для витрины.'
+        ],
+        hints: [
+          'Перечислите колонки через запятую: product_name, price.',
+          'Порядок в SELECT = порядок столбцов в Result, не в таблице.',
+          'Читается как: выбрать название и цену из таблицы products.'
+        ],
+        sql: `-- читается как: выбрать название и цену из таблицы products
+SELECT product_name, price  -- выбрать: эти столбцы
+FROM products;              -- из таблицы products`
       },
       {
         id: 'select-order',
         testId: 'sql-lesson-select-order',
         title: 'ORDER BY',
-        task: 'Те же поля, но сначала самый дорогой. Ноутбук сверху.',
-        hint: 'ORDER BY price DESC. Без DESC SQLite сортирует по возрастанию.',
-        sql: 'SELECT product_name, price FROM products ORDER BY price DESC;'
+        tasks: [
+          'Те же поля, но сначала самый дорогой. Ноутбук сверху.',
+          'Разверните сортировку в ASC — Кофе должен оказаться первым.',
+          'Отсортируйте по имени: ORDER BY product_name.'
+        ],
+        hints: [
+          'ORDER BY price DESC. Без DESC SQLite сортирует по возрастанию.',
+          'ASC — по возрастанию, DESC — по убыванию. Пишут в конце запроса.',
+          'Читается как: выбрать название и цену из products и отсортировать по убыванию цены.'
+        ],
+        sql: `-- читается как: выбрать название и цену из products, отсортировать по убыванию цены
+SELECT product_name, price  -- выбрать: эти столбцы
+FROM products               -- из таблицы products
+ORDER BY price DESC;        -- сортировать по цене, сначала большие`
       }
     ]
   },
@@ -241,49 +354,124 @@ const LESSON_TOPICS = [
         id: 'inner',
         testId: 'sql-join-inner',
         title: 'INNER JOIN',
-        task: 'Только пары клиент–заказ. 3 строки: Анна дважды, Борис один раз.',
-        hint: 'Вера и Глеб не попадут — у них нет заказов.',
-        sql: 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nINNER JOIN orders o ON c.customer_id = o.customer_id;'
+        tasks: [
+          'Только пары клиент–заказ. 3 строки: Анна дважды, Борис один раз.',
+          'Убедитесь, что Веры и Глеба в результате нет.',
+          'Добавьте o.amount и найдите самый большой заказ среди пар.'
+        ],
+        hints: [
+          'Вера и Глеб не попадут — у них нет заказов.',
+          'INNER оставляет только пересечение: есть и клиент, и заказ.',
+          'Читается как: выбрать имя и заказ там, где клиент и заказ совпали по customer_id.'
+        ],
+        sql: `-- читается как: выбрать имя и заказ там, где клиент и заказ совпали по customer_id
+SELECT c.full_name, o.order_id, o.status, o.amount  -- какие столбцы показать
+FROM customers c                                    -- левая таблица
+INNER JOIN orders o                                 -- только совпавшие заказы
+  ON c.customer_id = o.customer_id;                 -- условие связи`
       },
       {
         id: 'left',
         testId: 'sql-join-left',
         title: 'LEFT JOIN',
-        task: 'Все клиенты. 5 строк, у Веры и Глеба order_id = NULL.',
-        hint: 'Не фильтруйте WHERE o.status — LEFT превратится в INNER.',
-        sql: 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nLEFT JOIN orders o ON c.customer_id = o.customer_id\nORDER BY c.full_name;'
+        tasks: [
+          'Все клиенты. 5 строк, у Веры и Глеба order_id = NULL.',
+          'Отфильтруйте клиентов без заказов: WHERE o.order_id IS NULL.',
+          'Посмотрите, сколько раз встречается Анна — у неё два заказа.'
+        ],
+        hints: [
+          'Не фильтруйте WHERE o.status — LEFT превратится в INNER.',
+          'LEFT = все строки левой таблицы. Дырки справа заполняются NULL.',
+          'Читается как: взять всех customers и слева приклеить orders по customer_id.'
+        ],
+        sql: `-- читается как: взять всех customers и слева приклеить orders по customer_id
+SELECT c.full_name, o.order_id, o.status, o.amount  -- какие столбцы показать
+FROM customers c                                    -- левая таблица — её строки не теряем
+LEFT JOIN orders o                                  -- приклеить заказы, даже если их нет
+  ON c.customer_id = o.customer_id                  -- условие связи
+ORDER BY c.full_name;                               -- сортировка по имени`
       },
       {
         id: 'right',
         testId: 'sql-join-right',
         title: 'RIGHT JOIN',
-        task: 'Все заказы. У 104 и 105 имя клиента NULL.',
-        hint: 'То же самое: FROM orders LEFT JOIN customers.',
-        sql: 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nRIGHT JOIN orders o ON c.customer_id = o.customer_id;'
+        tasks: [
+          'Все заказы. У 104 и 105 имя клиента NULL.',
+          'Найдите заказы-сироты: WHERE c.customer_id IS NULL.',
+          'Перепишите тот же смысл через FROM orders LEFT JOIN customers.'
+        ],
+        hints: [
+          'То же самое: FROM orders LEFT JOIN customers.',
+          'RIGHT = все строки правой таблицы. Здесь правая — orders.',
+          'Читается как: взять все orders и справа сохранить их, даже без клиента.'
+        ],
+        sql: `-- читается как: взять все orders и сохранить их, даже если клиента нет
+SELECT c.full_name, o.order_id, o.status, o.amount  -- какие столбцы показать
+FROM customers c                                    -- левая таблица
+RIGHT JOIN orders o                                 -- правая таблица — её строки не теряем
+  ON c.customer_id = o.customer_id;                 -- условие связи`
       },
       {
         id: 'full',
         testId: 'sql-join-full',
         title: 'FULL JOIN',
-        task: 'И клиенты без заказов, и заказы без клиента. 7 строк.',
-        hint: 'Дырки: WHERE c.customer_id IS NULL OR o.order_id IS NULL.',
-        sql: 'SELECT c.full_name, o.order_id, o.status, o.amount\nFROM customers c\nFULL JOIN orders o ON c.customer_id = o.customer_id;'
+        tasks: [
+          'И клиенты без заказов, и заказы без клиента. 7 строк.',
+          'Оставьте только дырки: WHERE c.customer_id IS NULL OR o.order_id IS NULL.',
+          'Сверьте: 4 клиента + 5 заказов − 2 совпавшие пары Анны и 1 Бориса = 7.'
+        ],
+        hints: [
+          'Дырки: WHERE c.customer_id IS NULL OR o.order_id IS NULL.',
+          'FULL = LEFT ∪ RIGHT. SQLite 3.39+ умеет FULL JOIN.',
+          'Читается как: склеить customers и orders по id, не теряя ни одну сторону.'
+        ],
+        sql: `-- читается как: склеить customers и orders по id, не теряя ни одну сторону
+SELECT c.full_name, o.order_id, o.status, o.amount  -- какие столбцы показать
+FROM customers c                                    -- одна сторона
+FULL JOIN orders o                                  -- обе стороны целиком
+  ON c.customer_id = o.customer_id;                 -- условие связи`
       },
       {
         id: 'cross',
         testId: 'sql-join-cross',
         title: 'CROSS JOIN',
-        task: 'Декарт: 4 клиента × 5 заказов = 20 строк.',
-        hint: 'Для связи клиент–заказ это ошибка, не приём.',
-        sql: 'SELECT c.full_name, o.order_id\nFROM customers c\nCROSS JOIN orders o;'
+        tasks: [
+          'Декарт: 4 клиента × 5 заказов = 20 строк.',
+          'Добавьте WHERE c.customer_id = o.customer_id — получится почти INNER.',
+          'Попробуйте CROSS JOIN products: строк станет 4 × 3 = 12, если убрать orders.'
+        ],
+        hints: [
+          'Для связи клиент–заказ это ошибка, не приём.',
+          'CROSS не имеет ON: каждая строка × каждая строка.',
+          'Читается как: взять каждую пару «клиент × заказ» без условия связи.'
+        ],
+        sql: `-- читается как: взять каждую пару «клиент × заказ» без условия связи
+SELECT c.full_name, o.order_id  -- какие столбцы показать
+FROM customers c                -- каждая строка слева
+CROSS JOIN orders o;            -- умножить на каждую строку справа`
       },
       {
         id: 'self',
         testId: 'sql-join-self',
         title: 'SELF JOIN',
-        task: 'Пары клиентов из одного города. Анна и Вера — Москва.',
-        hint: 'a.customer_id < b.customer_id убирает дубли.',
-        sql: 'SELECT a.full_name AS customer_a, b.full_name AS customer_b, a.city\nFROM customers a\nJOIN customers b ON a.city = b.city AND a.customer_id < b.customer_id;'
+        tasks: [
+          'Пары клиентов из одного города. Анна и Вера — Москва.',
+          'Уберите `a.customer_id < b.customer_id` и посмотрите дубли (Анна–Вера и Вера–Анна).',
+          'Сделайте пары по email-домену или просто выведите всех из Казани.'
+        ],
+        hints: [
+          'a.customer_id < b.customer_id убирает дубли.',
+          'SELF JOIN — это JOIN таблицы самой с собой через два алиаса.',
+          'Читается как: взять customers дважды и найти пары с одинаковым городом.'
+        ],
+        sql: `-- читается как: взять customers дважды и найти пары с одинаковым городом
+SELECT a.full_name AS customer_a,  -- первый клиент
+       b.full_name AS customer_b,  -- второй клиент
+       a.city                      -- общий город
+FROM customers a                   -- таблица в роли A
+JOIN customers b                   -- та же таблица в роли B
+  ON a.city = b.city               -- связать по городу
+ AND a.customer_id < b.customer_id; -- без зеркальных дублей`
       }
     ]
   },
@@ -296,25 +484,58 @@ const LESSON_TOPICS = [
         id: 'where-cmp',
         testId: 'sql-lesson-where-cmp',
         title: 'Сравнение',
-        task: 'Товары дороже 1000 ₽. Ноутбук и Мышь, Кофе не проходит.',
-        hint: 'WHERE price > 1000. Сравнение идёт до JOIN-логики, на строках одной таблицы.',
-        sql: 'SELECT product_name, price FROM products WHERE price > 1000;'
+        tasks: [
+          'Товары дороже 1000 ₽. Ноутбук и Мышь, Кофе не проходит.',
+          'Сделайте price >= 1290 — должна остаться Мышь и Ноутбук.',
+          'Инверсия: WHERE price < 1000. Останется только Кофе.'
+        ],
+        hints: [
+          'WHERE price > 1000. Сравнение идёт на строках одной таблицы.',
+          'Операторы: = != <> > < >= <=. Строки сравнивайте в кавычках.',
+          'Читается как: выбрать название и цену из products, где цена больше 1000.'
+        ],
+        sql: `-- читается как: выбрать название и цену из products, где цена больше 1000
+SELECT product_name, price  -- какие столбцы показать
+FROM products               -- из какой таблицы
+WHERE price > 1000;         -- оставить только строки с ценой > 1000`
       },
       {
         id: 'where-like',
         testId: 'sql-lesson-where-like',
         title: 'LIKE',
-        task: 'Клиенты, у кого город начинается на «М». Анна и Вера — Москва.',
-        hint: 'LIKE \'М%\' — % это любая последовательность символов.',
-        sql: "SELECT full_name, city FROM customers WHERE city LIKE 'М%';"
+        tasks: [
+          'Клиенты, у кого город начинается на «М». Анна и Вера — Москва.',
+          'Найдите имена на «А»: WHERE full_name LIKE \'А%\'.',
+          'Попробуйте \'%а%\' — вхождение буквы в любом месте.'
+        ],
+        hints: [
+          'LIKE \'М%\' — % это любая последовательность символов.',
+          '_ — ровно один символ. LIKE чувствителен к регистру в SQLite по умолчанию.',
+          'Читается как: выбрать имя и город из customers, где город начинается на М.'
+        ],
+        sql: `-- читается как: выбрать имя и город из customers, где город начинается на М
+SELECT full_name, city     -- какие столбцы показать
+FROM customers             -- из какой таблицы
+WHERE city LIKE 'М%';      -- шаблон: М + что угодно дальше`
       },
       {
         id: 'where-null',
         testId: 'sql-lesson-where-null',
         title: 'IS NULL',
-        task: 'Заказы без клиента. Строки 104 и 105.',
-        hint: 'NULL нельзя сравнить через =. Только IS NULL / IS NOT NULL.',
-        sql: 'SELECT order_id, status, amount FROM orders WHERE customer_id IS NULL;'
+        tasks: [
+          'Заказы без клиента. Строки 104 и 105.',
+          'Противоположность: WHERE customer_id IS NOT NULL — заказы с хозяином.',
+          'Сравните = NULL: такое условие не вернёт строк.'
+        ],
+        hints: [
+          'NULL нельзя сравнить через =. Только IS NULL / IS NOT NULL.',
+          'NULL значит «значение неизвестно», а не 0 и не пустая строка.',
+          'Читается как: выбрать заказы из orders, у которых нет customer_id.'
+        ],
+        sql: `-- читается как: выбрать заказы из orders, у которых нет customer_id
+SELECT order_id, status, amount  -- какие столбцы показать
+FROM orders                      -- из какой таблицы
+WHERE customer_id IS NULL;       -- только строки без клиента`
       }
     ]
   },
@@ -327,17 +548,38 @@ const LESSON_TOPICS = [
         id: 'agg-count',
         testId: 'sql-lesson-agg-count',
         title: 'COUNT',
-        task: 'Сколько всего клиентов. Одна строка со значением 4.',
-        hint: 'COUNT(*) считает строки, COUNT(column) пропускает NULL.',
-        sql: 'SELECT COUNT(*) AS customers_count FROM customers;'
+        tasks: [
+          'Сколько всего клиентов. Одна строка со значением 4.',
+          'COUNT(email) vs COUNT(*): если бы email был NULL, цифры разошлись бы.',
+          'Посчитайте заказы: COUNT(*) FROM orders — должно быть 5.'
+        ],
+        hints: [
+          'COUNT(*) считает строки, COUNT(column) пропускает NULL.',
+          'AS customers_count даёт столбцу понятное имя в Result.',
+          'Читается как: посчитать число строк в таблице customers.'
+        ],
+        sql: `-- читается как: посчитать число строк в таблице customers
+SELECT COUNT(*) AS customers_count  -- агрегат: сколько строк
+FROM customers;                     -- в какой таблице`
       },
       {
         id: 'agg-status',
         testId: 'sql-lesson-agg-status',
         title: 'По status',
-        task: 'Число заказов в каждом статусе. GROUP BY status.',
-        hint: 'В SELECT могут быть только ключ группировки и агрегаты — не full_name без GROUP BY.',
-        sql: 'SELECT status, COUNT(*) AS orders_count FROM orders GROUP BY status;'
+        tasks: [
+          'Число заказов в каждом статусе. GROUP BY status.',
+          'Добавьте SUM(amount) — сумма денег по статусу.',
+          'HAVING COUNT(*) > 1 оставит только статусы с несколькими заказами.'
+        ],
+        hints: [
+          'В SELECT могут быть только ключ группировки и агрегаты — не full_name без GROUP BY.',
+          'WHERE фильтрует строки до группы, HAVING — уже после GROUP BY.',
+          'Читается как: сгруппировать заказы по status и посчитать, сколько в каждой кучке.'
+        ],
+        sql: `-- читается как: сгруппировать заказы по status и посчитать, сколько в каждой кучке
+SELECT status, COUNT(*) AS orders_count  -- ключ группы + агрегат
+FROM orders                              -- из какой таблицы
+GROUP BY status;                         -- разрезать строки на кучки по status`
       }
     ]
   }
@@ -346,6 +588,9 @@ const LESSON_TOPICS = [
 const lessonItems = LESSON_TOPICS.flatMap((topic) => topic.items)
 const selectedLesson = ref('left')
 const expandedTopics = ref({ join: true })
+const taskIndex = ref(0)
+const hintIndex = ref(0)
+const flashStartX = ref(0)
 const sql = ref(lessonItems.find((item) => item.id === 'left').sql)
 const loading = ref(false)
 const error = ref('')
@@ -369,6 +614,9 @@ const schemaTables = computed(() => schema.value?.tables || [])
 const currentLesson = computed(
   () => lessonItems.find((lesson) => lesson.id === selectedLesson.value) || lessonItems[4]
 )
+
+const currentTasks = computed(() => currentLesson.value.tasks || [])
+const currentHints = computed(() => currentLesson.value.hints || [])
 
 const statusText = computed(() => {
   const parts = ['read-only']
@@ -413,9 +661,28 @@ function selectLesson(id) {
   selectedLesson.value = id
   const lesson = lessonItems.find((item) => item.id === id)
   if (lesson) sql.value = lesson.sql
+  taskIndex.value = 0
+  hintIndex.value = 0
   error.value = ''
   result.value = null
   elapsedMs.value = null
+}
+
+function shiftCard(kind, delta) {
+  const list = kind === 'task' ? currentTasks.value : currentHints.value
+  if (!list.length) return
+  const index = kind === 'task' ? taskIndex : hintIndex
+  index.value = (index.value + delta + list.length) % list.length
+}
+
+function onFlashPointerDown(event) {
+  flashStartX.value = event.clientX
+}
+
+function onFlashPointerUp(kind, event) {
+  const dx = event.clientX - flashStartX.value
+  if (dx > 40) shiftCard(kind, -1)
+  if (dx < -40) shiftCard(kind, 1)
 }
 
 function columnMark(table, column) {
@@ -486,7 +753,7 @@ function formatCell(value) {
   height: 100%;
   padding: 12px;
   display: grid;
-  grid-template-columns: 248px minmax(0, 1fr) 280px;
+  grid-template-columns: 264px minmax(0, 1fr) 280px;
   gap: 10px;
   min-height: 0;
 }
@@ -648,8 +915,174 @@ function formatCell(value) {
 
 .lesson-meta {
   flex-shrink: 0;
-  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
   border-top: 1px solid var(--border);
+}
+
+.flash {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 108px;
+  padding: 9px 10px 8px;
+  border-radius: 12px;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.flash--task {
+  color: var(--heading);
+  background:
+    radial-gradient(120px 80px at 100% 0%, rgba(251, 191, 36, 0.22), transparent 70%),
+    linear-gradient(165deg, rgba(245, 158, 11, 0.2), rgba(120, 53, 15, 0.12));
+  border: 1px solid rgba(251, 191, 36, 0.42);
+  box-shadow: inset 0 1px 0 rgba(253, 230, 138, 0.16);
+}
+
+.flash--hint {
+  color: var(--heading);
+  background:
+    radial-gradient(120px 80px at 0% 0%, rgba(167, 139, 250, 0.24), transparent 70%),
+    linear-gradient(165deg, rgba(139, 92, 246, 0.22), rgba(49, 46, 129, 0.12));
+  border: 1px solid rgba(167, 139, 250, 0.42);
+  box-shadow: inset 0 1px 0 rgba(196, 181, 253, 0.14);
+}
+
+.flash-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.flash-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.flash--task .flash-kicker,
+.flash--task .flash-step {
+  color: #fbbf24;
+}
+
+.flash--hint .flash-kicker,
+.flash--hint .flash-step {
+  color: #c4b5fd;
+}
+
+.flash-step {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.flash-text {
+  margin: 0;
+  flex: 1;
+  color: var(--text);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.flash-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.flash-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.28);
+  color: inherit;
+  cursor: pointer;
+}
+
+.flash-arrow :deep(.sql-glyph) {
+  transform: rotate(180deg);
+}
+
+.flash-arrow--next :deep(.sql-glyph) {
+  transform: none;
+}
+
+.flash--task .flash-arrow {
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.flash--hint .flash-arrow {
+  color: #ddd6fe;
+  border-color: rgba(167, 139, 250, 0.35);
+}
+
+.flash-arrow:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.flash-dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.flash-dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.45);
+  cursor: pointer;
+}
+
+.flash--task .flash-dot.is-on {
+  background: #fbbf24;
+}
+
+.flash--hint .flash-dot.is-on {
+  background: #c4b5fd;
+}
+
+:global([data-theme='light']) .flash--task {
+  background:
+    radial-gradient(120px 80px at 100% 0%, rgba(251, 191, 36, 0.35), transparent 70%),
+    linear-gradient(165deg, #fff7ed, #ffedd5);
+  border-color: #fdba74;
+}
+
+:global([data-theme='light']) .flash--hint {
+  background:
+    radial-gradient(120px 80px at 0% 0%, rgba(167, 139, 250, 0.28), transparent 70%),
+    linear-gradient(165deg, #f5f3ff, #ede9fe);
+  border-color: #c4b5fd;
+}
+
+:global([data-theme='light']) .flash--task .flash-kicker,
+:global([data-theme='light']) .flash--task .flash-step {
+  color: #b45309;
+}
+
+:global([data-theme='light']) .flash--hint .flash-kicker,
+:global([data-theme='light']) .flash--hint .flash-step {
+  color: #6d28d9;
 }
 
 .toolbar {

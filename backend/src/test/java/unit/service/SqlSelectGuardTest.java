@@ -59,4 +59,24 @@ class SqlSelectGuardTest {
     void rejectsMultipleStatements() {
         assertThrows(SqlSandboxException.class, () -> SqlSelectGuard.validate("SELECT * FROM products; SELECT 1"));
     }
+
+    @Test
+    void allowsLineCommentsForLearning() {
+        String sql = SqlSelectGuard.validate(
+                """
+                SELECT *           -- выбрать все столбцы
+                FROM products;     -- из таблицы products
+                -- читается как: выбрать все столбцы из таблицы products
+                """
+        );
+        assertEquals("SELECT * FROM products", sql.replaceAll("\\s+", " "));
+    }
+
+    @Test
+    void commentsCannotHideForbiddenTable() {
+        assertThrows(
+                SqlSandboxException.class,
+                () -> SqlSelectGuard.validate("SELECT * FROM users -- products")
+        );
+    }
 }
