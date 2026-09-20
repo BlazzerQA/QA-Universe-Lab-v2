@@ -7,12 +7,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Allows a single SELECT against the shop table {@code products}.
+ * Allows a single SELECT against shop and JOIN-practice tables.
  * Blocks writes, DDL, and queries to other tables (including {@code users}).
  */
 public final class SqlSelectGuard {
 
-    static final Set<String> ALLOWED_TABLES = Set.of("products");
+    static final Set<String> ALLOWED_TABLES = Set.of("products", "customers", "orders");
+    private static final String ALLOWED_TABLES_HINT =
+            "Можно читать только таблицы products, customers, orders.";
 
     private static final Pattern FORBIDDEN_KEYWORDS = Pattern.compile(
             "(?i)\\b(insert|update|delete|drop|alter|create|attach|detach|pragma|replace|vacuum|reindex|trigger|grant|revoke)\\b"
@@ -52,11 +54,11 @@ public final class SqlSelectGuard {
             foundTable = true;
             String table = matcher.group(1).toLowerCase();
             if (!ALLOWED_TABLES.contains(table)) {
-                throw new SqlSandboxException("Можно читать только таблицу products.");
+                throw new SqlSandboxException(ALLOWED_TABLES_HINT);
             }
         }
         if (!foundTable) {
-            throw new SqlSandboxException("Укажите таблицу: FROM products.");
+            throw new SqlSandboxException("Укажите таблицу: FROM products, customers или orders.");
         }
         return trimmed;
     }

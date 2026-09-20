@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import qa.universe.dto.SqlQueryResponse;
 import qa.universe.dto.SqlSchemaResponse;
+import qa.universe.dto.SqlTableSchema;
 import qa.universe.exception.SqlSandboxException;
 
 import java.sql.ResultSet;
@@ -24,7 +25,13 @@ public class SqlSandboxService {
     private final JdbcTemplate jdbcTemplate;
 
     public SqlSchemaResponse schema() {
-        return new SqlSchemaResponse("products", List.of("product_id", "product_name", "price"));
+        List<SqlTableSchema> tables = List.of(
+                new SqlTableSchema("products", List.of("product_id", "product_name", "price")),
+                new SqlTableSchema("customers", List.of("customer_id", "full_name", "city", "email")),
+                new SqlTableSchema("orders", List.of("order_id", "customer_id", "status", "amount", "created_at"))
+        );
+        SqlTableSchema products = tables.get(0);
+        return new SqlSchemaResponse(products.getTable(), products.getColumns(), tables);
     }
 
     public SqlQueryResponse execute(String rawSql) {

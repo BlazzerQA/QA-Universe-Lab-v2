@@ -10,8 +10,9 @@ import java.util.Map;
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 
 public class SqlSandboxApiTest extends BaseTest {
 
@@ -23,7 +24,23 @@ public class SqlSandboxApiTest extends BaseTest {
                 .then()
                 .statusCode(200)
                 .body("table", equalTo("products"))
-                .body("columns", hasItem("product_name"));
+                .body("columns", hasItem("product_name"))
+                .body("tables.table", hasItems("products", "customers", "orders"));
+    }
+
+    @Test
+    @Description("SQL sandbox executes LEFT JOIN on customers and orders")
+    public void testLeftJoinCustomersOrders() {
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("sql",
+                        "SELECT c.full_name, o.order_id FROM customers c LEFT JOIN orders o ON c.customer_id = o.customer_id"))
+                .when()
+                .post("/api/sql/query")
+                .then()
+                .statusCode(200)
+                .body("columns", hasItem("full_name"))
+                .body("rowCount", greaterThanOrEqualTo(4));
     }
 
     @Test
